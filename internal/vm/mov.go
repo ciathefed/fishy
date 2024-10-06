@@ -64,7 +64,7 @@ func (m *Machine) handleMovRegAof() {
 		num, _ := strconv.ParseInt(v.Value, 10, 32)
 		addr += int(num)
 	case *ast.Register:
-		num := m.registers[v.Value]
+		num := m.getRegister(v.Value)
 		addr += int(num)
 	default:
 		panic(fmt.Sprintf("unknown value to get address of: %#v", value))
@@ -83,7 +83,7 @@ func (m *Machine) handleMovAofReg() {
 		num, _ := strconv.ParseInt(v.Value, 10, 32)
 		addr += int(num)
 	case *ast.Register:
-		num := m.registers[v.Value]
+		num := m.getRegister(v.Value)
 		addr += int(num)
 	default:
 		panic(fmt.Sprintf("unknown value to get address of: %#v", value))
@@ -106,7 +106,7 @@ func (m *Machine) handleMovAofLit() {
 		num, _ := strconv.ParseInt(v.Value, 10, 32)
 		addr += int(num)
 	case *ast.Register:
-		num := m.registers[v.Value]
+		num := m.getRegister(v.Value)
 		addr += int(num)
 	default:
 		panic(fmt.Sprintf("unknown value to get address of: %#v", value))

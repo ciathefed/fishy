@@ -12,6 +12,7 @@ var Instructions = []string{
 	"add", "sub", "mul", "div",
 	"cmp",
 	"jmp", "jeq", "jne", "jlt", "jgt", "jle", "jge", "jz",
+	"push", "pop",
 }
 
 var Sequences = []string{

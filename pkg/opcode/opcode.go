@@ -43,6 +43,10 @@ const (
 	JLE_REG
 	JGE_LIT
 	JGE_REG
+
+	PUSH_LIT
+	PUSH_REG
+	POP_REG
 )
 
 func (o Opcode) String() string {
@@ -115,6 +119,12 @@ func (o Opcode) String() string {
 		return "JGE_LIT"
 	case JGE_REG:
 		return "JGE_REG"
+	case PUSH_LIT:
+		return "PUSH_LIT"
+	case PUSH_REG:
+		return "PUSH_REG"
+	case POP_REG:
+		return "POP_REG"
 	default:
 		return fmt.Sprintf("0x%04X", int(o))
 	}

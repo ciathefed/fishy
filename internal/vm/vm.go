@@ -72,6 +72,10 @@ func (m *Machine) Run() {
 			opcode.JLE_LIT, opcode.JLE_REG,
 			opcode.JGE_LIT, opcode.JGE_REG:
 			m.handleJump(op)
+		case opcode.PUSH_LIT, opcode.PUSH_REG:
+			m.handlePush(op)
+		case opcode.POP_REG:
+			m.handlePop(op)
 
 		default:
 			panic(fmt.Sprintf("unhandled instruction: %s", op.String()))
@@ -159,6 +163,32 @@ func (m *Machine) readLiteral() uint32 {
 	lit := m.decodeNumber("u32", pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 4)
 	return uint32(lit)
+}
+
+func (m *Machine) stackPush(v uint32) {
+	spIndex := utils.RegisterToIndex("sp")
+	spValue := m.getRegister(spIndex)
+
+	byteArray := utils.Bytes4(v)
+
+	memIndex := int(spValue) - 4
+
+	copy(m.memory[memIndex:memIndex+4], byteArray)
+
+	m.setRegister(spIndex, spValue-4)
+}
+
+func (m *Machine) stackPop(registerIndex int) {
+	spIndex := utils.RegisterToIndex("sp")
+	spValue := m.getRegister(spIndex)
+
+	memIndex := int(spValue)
+
+	value := binary.BigEndian.Uint32(m.memory[memIndex : memIndex+4])
+
+	m.setRegister(registerIndex, value)
+
+	m.setRegister(spIndex, spValue+4)
 }
 
 func (m *Machine) DumpRegisters() {

@@ -122,6 +122,10 @@ func (c *Compiler) compileInstruction(instruction *ast.Instruction) error {
 		return c.compileCompare(instruction)
 	case "jmp", "jeq", "jne", "jlt", "jgt", "jle", "jge", "jz":
 		return c.compileJump(instruction)
+	case "push":
+		return c.compilePush(instruction)
+	case "pop":
+		return c.compilePop(instruction)
 	default:
 		return fmt.Errorf("unknown instruction: %s", instruction.Name)
 	}
