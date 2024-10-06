@@ -1,9 +1,9 @@
 .section text
 _start:
-    mov x5, 47  ; nth
+    mov x5, $47  ; nth
 
-    mov x0, 0   ; return value
-    mov x1, 1
+    mov x0, $0   ; return value
+    mov x1, $1
     mov x3, x5
 
 .loop:
@@ -13,8 +13,8 @@ _start:
     mov x0, x1
     mov x1, x2
 
-    sub x3, 1
-    cmp x3, 0
+    sub x3, $1
+    cmp x3, $0
     jne .loop
 
     hlt
