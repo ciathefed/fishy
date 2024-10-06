@@ -1,0 +1,9 @@
+#include "../stdlib/io.fi"
+#include "../stdlib/os.fi"
+
+message:
+    db "Hello, World!\n", 0
+
+_start:
+    write STDOUT, message, 14
+    exit 0
