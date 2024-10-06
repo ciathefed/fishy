@@ -19,7 +19,7 @@ func New(bytecode []byte, memorySize int, debug bool) *Machine {
 	memory := make([]byte, memorySize-len(bytecode)+4)
 	memory = append(bytecode, memory...)
 
-	m := &Machine{registers: make([]uint32, 23), memory: memory, debug: debug}
+	m := &Machine{registers: make([]uint32, 21), memory: memory, debug: debug}
 	m.parseHeader()
 	m.setRegister(utils.RegisterToIndex("sp"), uint32(len(m.memory)))
 	m.setRegister(utils.RegisterToIndex("fp"), uint32(len(m.memory)))
@@ -62,6 +62,16 @@ func (m *Machine) Run() {
 			opcode.MUL_REG_LIT, opcode.MUL_REG_REG,
 			opcode.DIV_REG_LIT, opcode.DIV_REG_REG:
 			m.handleArithmetic(op)
+		case opcode.CMP_REG_LIT, opcode.CMP_REG_REG:
+			m.handleCompare(op)
+		case opcode.JMP_LIT, opcode.JMP_REG,
+			opcode.JEQ_LIT, opcode.JEQ_REG,
+			opcode.JNE_LIT, opcode.JNE_REG,
+			opcode.JLT_LIT, opcode.JLT_REG,
+			opcode.JGT_LIT, opcode.JGT_REG,
+			opcode.JLE_LIT, opcode.JLE_REG,
+			opcode.JGE_LIT, opcode.JGE_REG:
+			m.handleJump(op)
 
 		default:
 			panic(fmt.Sprintf("unhandled instruction: %s", op.String()))

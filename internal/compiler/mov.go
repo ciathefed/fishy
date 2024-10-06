@@ -11,7 +11,7 @@ import (
 func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 	section := c.currentSectionBytecode()
 
-	if len(instruction.Args) < 2 {
+	if len(instruction.Args) != 2 {
 		return fmt.Errorf("mov expected 2 arguments")
 	}
 

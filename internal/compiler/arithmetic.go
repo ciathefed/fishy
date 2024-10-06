@@ -11,7 +11,7 @@ import (
 func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
 	section := c.currentSectionBytecode()
 
-	if len(instruction.Args) < 2 {
+	if len(instruction.Args) != 2 {
 		return fmt.Errorf("%s expected 2 arguments", instruction.Name)
 	}
 

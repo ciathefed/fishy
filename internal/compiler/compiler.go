@@ -87,7 +87,7 @@ func (c *Compiler) compileLabel(label *ast.Label) error {
 func (c *Compiler) compileInstruction(instruction *ast.Instruction) error {
 	switch instruction.Name {
 	case ".section":
-		if len(instruction.Args) < 1 {
+		if len(instruction.Args) != 1 {
 			return fmt.Errorf(".section expected 1 argument")
 		}
 
@@ -118,6 +118,10 @@ func (c *Compiler) compileInstruction(instruction *ast.Instruction) error {
 		return c.compileMov(instruction)
 	case "add", "sub", "mul", "div":
 		return c.compileArithmetic(instruction)
+	case "cmp":
+		return c.compileCompare(instruction)
+	case "jmp", "jeq", "jne", "jlt", "jgt", "jle", "jge", "jz":
+		return c.compileJump(instruction)
 	default:
 		return fmt.Errorf("unknown instruction: %s", instruction.Name)
 	}

@@ -25,6 +25,24 @@ const (
 	MUL_REG_REG
 	DIV_REG_LIT
 	DIV_REG_REG
+
+	CMP_REG_LIT
+	CMP_REG_REG
+
+	JMP_LIT
+	JMP_REG
+	JEQ_LIT
+	JEQ_REG
+	JNE_LIT
+	JNE_REG
+	JLT_LIT
+	JLT_REG
+	JGT_LIT
+	JGT_REG
+	JLE_LIT
+	JLE_REG
+	JGE_LIT
+	JGE_REG
 )
 
 func (o Opcode) String() string {
@@ -65,6 +83,38 @@ func (o Opcode) String() string {
 		return "DIV_REG_LIT"
 	case DIV_REG_REG:
 		return "DIV_REG_REG"
+	case CMP_REG_LIT:
+		return "CMP_REG_LIT"
+	case CMP_REG_REG:
+		return "CMP_REG_REG"
+	case JMP_LIT:
+		return "JMP_LIT"
+	case JMP_REG:
+		return "JMP_REG"
+	case JEQ_LIT:
+		return "JEQ_LIT"
+	case JEQ_REG:
+		return "JEQ_REG"
+	case JNE_LIT:
+		return "JNE_LIT"
+	case JNE_REG:
+		return "JNE_REG"
+	case JLT_LIT:
+		return "JLT_LIT"
+	case JLT_REG:
+		return "JLT_REG"
+	case JGT_LIT:
+		return "JGT_LIT"
+	case JGT_REG:
+		return "JGT_REG"
+	case JLE_LIT:
+		return "JLE_LIT"
+	case JLE_REG:
+		return "JLE_REG"
+	case JGE_LIT:
+		return "JGE_LIT"
+	case JGE_REG:
+		return "JGE_REG"
 	default:
 		return fmt.Sprintf("0x%04X", int(o))
 	}
