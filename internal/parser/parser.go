@@ -50,6 +50,9 @@ func (p *Parser) parseStatement() (ast.Statement, error) {
 		return p.parseInstruction()
 	case token.SEQUENCE:
 		return p.parseSequence()
+	case token.COMMENT:
+		p.nextToken()
+		return p.parseStatement()
 	default:
 		return nil, fmt.Errorf("unexpected token: %v", p.currentToken)
 	}

@@ -12,13 +12,14 @@ import (
 type Machine struct {
 	registers []uint32
 	memory    []byte
+	debug     bool
 }
 
-func New(bytecode []byte, memorySize int) *Machine {
+func New(bytecode []byte, memorySize int, debug bool) *Machine {
 	memory := make([]byte, memorySize-len(bytecode)+4)
 	memory = append(bytecode, memory...)
 
-	m := &Machine{registers: make([]uint32, 23), memory: memory}
+	m := &Machine{registers: make([]uint32, 23), memory: memory, debug: debug}
 	m.parseHeader()
 	m.setRegister(utils.RegisterToIndex("sp"), uint32(len(m.memory)))
 	m.setRegister(utils.RegisterToIndex("fp"), uint32(len(m.memory)))
@@ -37,7 +38,11 @@ func (m *Machine) Run() {
 		case opcode.HLT:
 			return
 		case opcode.BRK:
-			panic("todo")
+			if m.debug {
+				panic("todo")
+			} else {
+				m.incRegister(utils.RegisterToIndex("ip"), 1)
+			}
 		case opcode.SYSCALL:
 			m.handleSyscall()
 		case opcode.MOV_REG_REG:
@@ -50,31 +55,31 @@ func (m *Machine) Run() {
 			m.handleMovRegAof()
 		case opcode.MOV_AOF_REG:
 			m.handleMovAofReg()
+		case opcode.ADD_REG_LIT, opcode.ADD_REG_REG,
+			opcode.SUB_REG_LIT, opcode.SUB_REG_REG,
+			opcode.MUL_REG_LIT, opcode.MUL_REG_REG,
+			opcode.DIV_REG_LIT, opcode.DIV_REG_REG:
+			m.handleArithmetic(op)
+
+		default:
+			panic(fmt.Sprintf("unknown instruction: %s", op.String()))
 		}
 	}
 }
 
-func (m *Machine) handleSyscall() {
-	m.incRegister(utils.RegisterToIndex("ip"), 2)
-
-	index := m.getRegister(utils.RegisterToIndex("x15"))
-	sc := SyscallIndex(index)
-
-	if call, ok := Syscalls[sc]; ok {
-		call(m)
-	} else {
-		panic(fmt.Sprintf("unknown syscall: %d", sc))
-	}
-}
-
-func (m *Machine) decodeNumber(dataType string, start int) int {
+func (m *Machine) decodeNumber(dataType string, index int) int {
 	switch dataType {
+	case "u8":
+		return int(m.memory[index])
 	case "u16":
-		bytes := m.memory[start : start+2]
+		bytes := m.memory[index : index+2]
 		return int(binary.BigEndian.Uint16(bytes))
 	case "u32":
-		bytes := m.memory[start : start+4]
+		bytes := m.memory[index : index+4]
 		return int(binary.BigEndian.Uint32(bytes))
+	case "u64":
+		bytes := m.memory[index : index+8]
+		return int(binary.BigEndian.Uint64(bytes))
 	default:
 		panic(fmt.Sprintf("unknown data type: %s", dataType))
 	}

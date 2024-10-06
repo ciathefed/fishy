@@ -1,5 +1,7 @@
 package opcode
 
+import "fmt"
+
 type Opcode int
 
 const (
@@ -13,6 +15,15 @@ const (
 	MOV_REG_ADR
 	MOV_REG_AOF
 	MOV_AOF_REG
+
+	ADD_REG_LIT
+	ADD_REG_REG
+	SUB_REG_LIT
+	SUB_REG_REG
+	MUL_REG_LIT
+	MUL_REG_REG
+	DIV_REG_LIT
+	DIV_REG_REG
 )
 
 func (o Opcode) String() string {
@@ -35,7 +46,23 @@ func (o Opcode) String() string {
 		return "MOV_REG_AOF"
 	case MOV_AOF_REG:
 		return "MOV_AOF_REG"
+	case ADD_REG_LIT:
+		return "ADD_REG_LIT"
+	case ADD_REG_REG:
+		return "ADD_REG_REG"
+	case SUB_REG_LIT:
+		return "SUB_REG_LIT"
+	case SUB_REG_REG:
+		return "SUB_REG_REG"
+	case MUL_REG_LIT:
+		return "MUL_REG_LIT"
+	case MUL_REG_REG:
+		return "MUL_REG_REG"
+	case DIV_REG_LIT:
+		return "DIV_REG_LIT"
+	case DIV_REG_REG:
+		return "DIV_REG_REG"
 	default:
-		return "UNKNOWN"
+		return fmt.Sprintf("0x%04X", int(o))
 	}
 }

@@ -23,7 +23,7 @@ var runCmd = &cobra.Command{
 			log.Info("read bytecode from input", "file", inputFile, "bytes", len(inputData))
 		}
 
-		m := vm.New(inputData, memorySize)
+		m := vm.New(inputData, memorySize, false)
 		m.Run()
 
 		if vomitRegisters {

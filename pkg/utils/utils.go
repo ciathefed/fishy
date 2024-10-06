@@ -1,13 +1,16 @@
 package utils
 
 var Instructions = []string{
+	".section",
+
 	"nop",
 	"hlt",
 	"brk",
-	"mov",
 	"syscall",
 
-	".section",
+	"mov",
+
+	"add", "sub", "mul", "div",
 }
 
 var Sequences = []string{

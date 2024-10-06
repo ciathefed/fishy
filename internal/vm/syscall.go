@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fishy/pkg/utils"
+	"fmt"
 	"os"
 	"syscall"
 )
@@ -63,4 +64,17 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 
 		syscall.Close(int(fd))
 	},
+}
+
+func (m *Machine) handleSyscall() {
+	m.incRegister(utils.RegisterToIndex("ip"), 2)
+
+	index := m.getRegister(utils.RegisterToIndex("x15"))
+	sc := SyscallIndex(index)
+
+	if call, ok := Syscalls[sc]; ok {
+		call(m)
+	} else {
+		panic(fmt.Sprintf("unknown syscall: %d", sc))
+	}
 }
