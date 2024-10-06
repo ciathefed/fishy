@@ -3,7 +3,6 @@ package cmd
 import (
 	"fishy/internal/vm"
 	"fishy/pkg/log"
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -27,9 +26,15 @@ var runCmd = &cobra.Command{
 		m := vm.New(inputData, memorySize)
 		m.Run()
 
-		m.DumpRegisters()
-		fmt.Println()
-		m.DumpMemory(0, 128)
+		if vomitRegisters {
+			log.Info("vomiting registers 🤮")
+			m.DumpRegisters()
+		}
+
+		if vomitMemory {
+			log.Info("vomiting memory 🤮")
+			m.DumpMemory(0, memorySize)
+		}
 	},
 }
 
@@ -38,4 +43,6 @@ func init() {
 
 	runCmd.Flags().IntVarP(&memorySize, "memory-size", "s", 1024, "total amount of memory to use")
 	runCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output")
+	runCmd.Flags().BoolVarP(&vomitRegisters, "vomit-registers", "", false, "dump the registers when done")
+	runCmd.Flags().BoolVarP(&vomitMemory, "vomit-memory", "", false, "dump the memory when done")
 }

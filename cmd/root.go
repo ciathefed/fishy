@@ -11,6 +11,8 @@ var (
 	skipPreprocessing bool
 	vomitLexer        bool
 	vomitParser       bool
+	vomitRegisters    bool
+	vomitMemory       bool
 	verbose           bool
 	memorySize        int
 )
@@ -25,8 +27,4 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-func init() {
-
 }
