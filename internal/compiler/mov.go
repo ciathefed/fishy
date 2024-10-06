@@ -72,8 +72,20 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 		}
 
 	case *ast.AddressOf:
-		opcode := utils.Bytes2(uint16(opcode.MOV_AOF_REG))
-		*section = append(*section, opcode...)
+		bytecode := []byte{}
+		switch a1 := arg1.(type) {
+		case *ast.Register:
+			opcode := utils.Bytes2(uint16(opcode.MOV_AOF_REG))
+			*section = append(*section, opcode...)
+			bytecode = append(bytecode, byte(a1.Value))
+		case *ast.NumberLiteral:
+			opcode := utils.Bytes2(uint16(opcode.MOV_AOF_LIT))
+			*section = append(*section, opcode...)
+			num, _ := strconv.ParseInt(a1.Value, 10, 32)
+			bytecode = append(bytecode, utils.Bytes4(uint32(num))...)
+		default:
+			return fmt.Errorf("mov expected argument #2 to be REGISTER got %s", a1.String())
+		}
 
 		index := a0.Value.Index()
 		switch value := a0.Value.(type) {
@@ -96,12 +108,7 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			return fmt.Errorf("mov expected argument #1 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER_LITERAL], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
 		}
 
-		switch a1 := arg1.(type) {
-		case *ast.Register:
-			*section = append(*section, byte(a1.Value))
-		default:
-			return fmt.Errorf("mov expected argument #2 to be REGISTER got %s", a1.String())
-		}
+		*section = append(*section, bytecode...)
 	default:
 		return fmt.Errorf("mov expected argument #1 to be REGISTER or ADDRESS_OF got %s", arg0.String())
 	}

@@ -55,6 +55,8 @@ func (m *Machine) Run() {
 			m.handleMovRegAof()
 		case opcode.MOV_AOF_REG:
 			m.handleMovAofReg()
+		case opcode.MOV_AOF_LIT:
+			m.handleMovAofLit()
 		case opcode.ADD_REG_LIT, opcode.ADD_REG_REG,
 			opcode.SUB_REG_LIT, opcode.SUB_REG_REG,
 			opcode.MUL_REG_LIT, opcode.MUL_REG_REG,
@@ -62,7 +64,7 @@ func (m *Machine) Run() {
 			m.handleArithmetic(op)
 
 		default:
-			panic(fmt.Sprintf("unknown instruction: %s", op.String()))
+			panic(fmt.Sprintf("unhandled instruction: %s", op.String()))
 		}
 	}
 }

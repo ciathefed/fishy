@@ -15,6 +15,7 @@ const (
 	MOV_REG_ADR
 	MOV_REG_AOF
 	MOV_AOF_REG
+	MOV_AOF_LIT
 
 	ADD_REG_LIT
 	ADD_REG_REG
@@ -46,6 +47,8 @@ func (o Opcode) String() string {
 		return "MOV_REG_AOF"
 	case MOV_AOF_REG:
 		return "MOV_AOF_REG"
+	case MOV_AOF_LIT:
+		return "MOV_AOF_LIT"
 	case ADD_REG_LIT:
 		return "ADD_REG_LIT"
 	case ADD_REG_REG:

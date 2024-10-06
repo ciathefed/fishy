@@ -95,3 +95,26 @@ func (m *Machine) handleMovAofReg() {
 
 	m.memory[addr] = byte(m.getRegister(reg))
 }
+
+func (m *Machine) handleMovAofLit() {
+	m.incRegister(utils.RegisterToIndex("ip"), 2)
+
+	value := m.decodeValue()
+	addr := 0
+	switch v := value.(type) {
+	case *ast.NumberLiteral:
+		num, _ := strconv.ParseInt(v.Value, 10, 32)
+		addr += int(num)
+	case *ast.Register:
+		num := m.registers[v.Value]
+		addr += int(num)
+	default:
+		panic(fmt.Sprintf("unknown value to get address of: %#v", value))
+	}
+
+	pos := m.position()
+	lit := m.decodeNumber("u32", pos)
+	m.incRegister(utils.RegisterToIndex("ip"), 4)
+
+	m.memory[addr] = byte(lit)
+}
