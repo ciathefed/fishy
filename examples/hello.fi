@@ -1,9 +1,11 @@
 #include "../stdlib/io.fi"
 #include "../stdlib/os.fi"
 
+.section data
 message:
     db "Hello, World!\n", 0
 
+.section text
 _start:
     write STDOUT, message, 14
     exit 0
