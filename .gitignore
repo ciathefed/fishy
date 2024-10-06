@@ -5,6 +5,8 @@
 *.fbc
 !examples/
 !examples/**/*.fi
+!stdlib/
+!stdlib/**/*.fi
 
 *.exe
 *.exe~

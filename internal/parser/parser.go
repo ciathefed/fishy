@@ -4,6 +4,7 @@ import (
 	"fishy/internal/lexer"
 	"fishy/pkg/ast"
 	"fishy/pkg/token"
+	"fishy/pkg/utils"
 	"fmt"
 )
 
@@ -115,9 +116,9 @@ func (p *Parser) parseArgument() (ast.Value, error) {
 		p.nextToken()
 		return &ast.Identifier{Value: id}, nil
 	case token.REGISTER:
-		reg := p.currentToken.Value
+		name := p.currentToken.Value
 		p.nextToken()
-		return &ast.Register{Value: parseRegister(reg)}, nil
+		return &ast.Register{Value: utils.RegisterToIndex(name)}, nil
 	case token.IMMEDIATE:
 		lit := p.currentToken.Value
 		p.nextToken()
@@ -169,9 +170,9 @@ func (p *Parser) parseExpression() (ast.Value, error) {
 func (p *Parser) parseTerm() (ast.Value, error) {
 	switch p.currentToken.Kind {
 	case token.REGISTER:
-		id := p.currentToken.Value
+		name := p.currentToken.Value
 		p.nextToken()
-		return &ast.Register{Value: parseRegister(id)}, nil
+		return &ast.Register{Value: utils.RegisterToIndex(name)}, nil
 	case token.IMMEDIATE:
 		lit := p.currentToken.Value
 		p.nextToken()
@@ -183,13 +184,4 @@ func (p *Parser) parseTerm() (ast.Value, error) {
 	default:
 		return nil, fmt.Errorf("unexpected token in term: %v", p.currentToken)
 	}
-}
-
-func parseRegister(name string) int {
-	for i, reg := range lexer.Registers {
-		if name == reg {
-			return i
-		}
-	}
-	return -1
 }

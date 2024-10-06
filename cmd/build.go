@@ -8,6 +8,7 @@ import (
 	"fishy/pkg/ast"
 	"fishy/pkg/log"
 	"fishy/pkg/token"
+	"fishy/pkg/utils"
 	"fmt"
 	"os"
 	"strings"
@@ -15,17 +16,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	outputFile        string
-	skipPreprocessing bool
-	vomitLexer        bool
-	vomitParser       bool
-	verbose           bool
-)
-
 var buildCmd = &cobra.Command{
-	Use:   "build [files...]",
-	Args:  cobra.MinimumNArgs(1),
+	Use:   "build [file]",
+	Args:  cobra.MaximumNArgs(1),
 	Short: "Compile a FishyASM file to Fishy Bytecode",
 	Run: func(cmd *cobra.Command, args []string) {
 		inputFile := args[0]
@@ -137,7 +130,7 @@ func stringValue(value ast.Value) string {
 	case *ast.StringLiteral:
 		return fmt.Sprintf("%#v", v.Value)
 	case *ast.Register:
-		return lexer.Registers[v.Value]
+		return utils.Registers[v.Value]
 	case *ast.Identifier:
 		return v.Value
 	case *ast.AddressOf:

@@ -2,30 +2,12 @@ package lexer
 
 import (
 	"fishy/pkg/token"
+	"fishy/pkg/utils"
 	"fmt"
 	"strconv"
 	"strings"
 	"unicode"
 )
-
-var Instructions = []string{
-	"nop",
-	"hlt",
-	"brk",
-	"mov",
-	"syscall",
-
-	".section",
-}
-
-var Sequences = []string{
-	"db",
-}
-
-var Registers = []string{
-	"x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
-	"ip", "fp", "sp", "cp", "er", "ccr", "ss",
-}
 
 type Lexer struct {
 	input        string
@@ -255,7 +237,7 @@ func (l *Lexer) peekChar() byte {
 }
 
 func isInstruction(ident string) bool {
-	for _, instr := range Instructions {
+	for _, instr := range utils.Instructions {
 		if instr == ident {
 			return true
 		}
@@ -264,7 +246,7 @@ func isInstruction(ident string) bool {
 }
 
 func isSequence(ident string) bool {
-	for _, seq := range Sequences {
+	for _, seq := range utils.Sequences {
 		if seq == ident {
 			return true
 		}
@@ -273,7 +255,7 @@ func isSequence(ident string) bool {
 }
 
 func isRegister(ident string) bool {
-	for _, reg := range Registers {
+	for _, reg := range utils.Registers {
 		if reg == ident {
 			return true
 		}

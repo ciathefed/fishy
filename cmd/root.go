@@ -6,6 +6,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	outputFile        string
+	skipPreprocessing bool
+	vomitLexer        bool
+	vomitParser       bool
+	verbose           bool
+	memorySize        int
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "fishy",
 	Short: "Fishy is a CLI tool used for the Fishy echo system",

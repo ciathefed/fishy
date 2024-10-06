@@ -1,0 +1,19 @@
+#define SYS_EXIT  0x01
+#define SYS_OPEN  0x02
+#define SYS_READ  0x03
+#define SYS_WRITE 0x04
+#define SYS_CLOSE 0x05
+
+#macro exit status
+    mov x0, status
+    mov x15, SYS_EXIT
+    syscall
+#end
+
+#macro write fd buffer len
+    mov x0, fd
+    mov x1, buffer
+    mov x2, len
+    mov x15, SYS_WRITE
+    syscall
+#end
