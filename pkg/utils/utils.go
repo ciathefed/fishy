@@ -13,6 +13,7 @@ var Instructions = []string{
 	"cmp",
 	"jmp", "jeq", "jne", "jlt", "jgt", "jle", "jge", "jz",
 	"push", "pop",
+	"call", "ret",
 }
 
 var Sequences = []string{

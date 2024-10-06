@@ -30,6 +30,6 @@ func (m *Machine) handlePop(op opcode.Opcode) {
 		pos := m.position()
 		reg := m.decodeRegister(pos)
 		m.incRegister(utils.RegisterToIndex("ip"), 1)
-		m.stackPop(reg)
+		m.setRegister(reg, m.stackPop())
 	}
 }

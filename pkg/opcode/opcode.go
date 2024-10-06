@@ -47,6 +47,9 @@ const (
 	PUSH_LIT
 	PUSH_REG
 	POP_REG
+
+	CALL_LIT
+	RET
 )
 
 func (o Opcode) String() string {
@@ -125,6 +128,10 @@ func (o Opcode) String() string {
 		return "PUSH_REG"
 	case POP_REG:
 		return "POP_REG"
+	case CALL_LIT:
+		return "CALL_LIT"
+	case RET:
+		return "RET"
 	default:
 		return fmt.Sprintf("0x%04X", int(o))
 	}

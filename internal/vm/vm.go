@@ -76,6 +76,10 @@ func (m *Machine) Run() {
 			m.handlePush(op)
 		case opcode.POP_REG:
 			m.handlePop(op)
+		case opcode.CALL_LIT:
+			m.handleCallLit()
+		case opcode.RET:
+			m.handleRet()
 
 		default:
 			panic(fmt.Sprintf("unhandled instruction: %s", op.String()))
@@ -178,7 +182,7 @@ func (m *Machine) stackPush(v uint32) {
 	m.setRegister(spIndex, spValue-4)
 }
 
-func (m *Machine) stackPop(registerIndex int) {
+func (m *Machine) stackPop() uint32 {
 	spIndex := utils.RegisterToIndex("sp")
 	spValue := m.getRegister(spIndex)
 
@@ -186,9 +190,9 @@ func (m *Machine) stackPop(registerIndex int) {
 
 	value := binary.BigEndian.Uint32(m.memory[memIndex : memIndex+4])
 
-	m.setRegister(registerIndex, value)
-
 	m.setRegister(spIndex, spValue+4)
+
+	return value
 }
 
 func (m *Machine) DumpRegisters() {

@@ -126,6 +126,10 @@ func (c *Compiler) compileInstruction(instruction *ast.Instruction) error {
 		return c.compilePush(instruction)
 	case "pop":
 		return c.compilePop(instruction)
+	case "call":
+		return c.compileCall(instruction)
+	case "ret":
+		return c.compileRet()
 	default:
 		return fmt.Errorf("unknown instruction: %s", instruction.Name)
 	}
