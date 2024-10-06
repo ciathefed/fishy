@@ -1,11 +1,15 @@
-#include "../stdlib/io.fi"
-#include "../stdlib/os.fi"
-
 .section data
 message:
     db "Hello, World!\n", 0
 
 .section text
 _start:
-    write STDOUT, message, 14
-    exit 0
+    mov x0, $1
+    mov x1, message
+    mov x2, $14
+    mov x15, $4
+    syscall
+
+    mov x0, $0
+    mov x15, $1
+    syscall
