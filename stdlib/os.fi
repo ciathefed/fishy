@@ -5,15 +5,38 @@
 #define SYS_CLOSE 0x05
 
 #macro exit status
-    mov x0, status
     mov x15, SYS_EXIT
+    mov x0, status
+    syscall
+#end
+
+#macro open addr len mode perms
+    mov x15, SYS_OPEN
+    mov x3, perms
+    mov x2, mode
+    mov x1, len
+    mov x0, addr
+    syscall
+#end
+
+#macro read fd buffer len
+    mov x15, SYS_READ
+    mov x2, len
+    mov x1, buffer
+    mov x0, fd
     syscall
 #end
 
 #macro write fd buffer len
-    mov x0, fd
-    mov x1, buffer
-    mov x2, len
     mov x15, SYS_WRITE
+    mov x2, len
+    mov x1, buffer
+    mov x0, fd
+    syscall
+#end
+
+#macro close fd
+    mov x15, SYS_CLOSE
+    mov x0, fd
     syscall
 #end

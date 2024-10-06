@@ -3,6 +3,7 @@ package vm
 import (
 	"fishy/pkg/utils"
 	"os"
+	"syscall"
 )
 
 type SyscallIndex int
@@ -22,6 +23,24 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		status := m.getRegister(utils.RegisterToIndex("x0"))
 		os.Exit(int(status))
 	},
+	SYS_READ: func(m *Machine) {
+		fd := m.getRegister(utils.RegisterToIndex("x0"))
+		addr := m.getRegister(utils.RegisterToIndex("x1"))
+		length := m.getRegister(utils.RegisterToIndex("x2"))
+
+		buffer := make([]byte, length)
+		n, err := syscall.Read(int(fd), buffer)
+		if err != nil {
+			panic(err)
+			// n = -1
+		}
+
+		for i := 0; i < int(length); i++ {
+			m.memory[int(addr)+i] = buffer[i]
+		}
+
+		m.setRegister(utils.RegisterToIndex("x0"), uint32(n))
+	},
 	SYS_WRITE: func(m *Machine) {
 		fd := m.getRegister(utils.RegisterToIndex("x0"))
 		addr := m.getRegister(utils.RegisterToIndex("x1"))
@@ -31,12 +50,17 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		end := start + int(length)
 		buffer := m.memory[start:end]
 
-		file := os.NewFile(uintptr(fd), "pipe")
-		n, err := file.Write(buffer)
+		n, err := syscall.Write(int(fd), buffer)
 		if err != nil {
 			panic(err)
+			// n = -1
 		}
 
 		m.setRegister(utils.RegisterToIndex("x0"), uint32(n))
+	},
+	SYS_CLOSE: func(m *Machine) {
+		fd := m.getRegister(utils.RegisterToIndex("x0"))
+
+		syscall.Close(int(fd))
 	},
 }
