@@ -137,6 +137,20 @@ func (m *Machine) incRegister(index int, amount int) {
 	m.registers[index] += uint32(amount)
 }
 
+func (m *Machine) readRegister() int {
+	pos := m.position()
+	reg := m.decodeRegister(pos)
+	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	return reg
+}
+
+func (m *Machine) readLiteral() uint32 {
+	pos := m.position()
+	lit := m.decodeNumber("u32", pos)
+	m.incRegister(utils.RegisterToIndex("ip"), 4)
+	return uint32(lit)
+}
+
 func (m *Machine) DumpRegisters() {
 	for i, register := range m.registers {
 		name := utils.IndexToRegister(i)
