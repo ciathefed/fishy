@@ -25,8 +25,8 @@ type Identifier struct {
 	Value string
 }
 
-func (n *NumberLiteral) String() string { return "NUMBER_LITERAL" }
-func (s *StringLiteral) String() string { return "STRING_LITERAL" }
+func (n *NumberLiteral) String() string { return "NUMBER" }
+func (s *StringLiteral) String() string { return "STRING" }
 func (r *Register) String() string      { return "REGISTER" }
 func (a *AddressOf) String() string     { return "ADDRESS_OF" }
 func (i *Identifier) String() string    { return "IDENTIFIER" }

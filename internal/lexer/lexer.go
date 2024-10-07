@@ -174,7 +174,7 @@ func (l *Lexer) readImmediate() token.Token {
 	value = strings.TrimPrefix(value, "$")
 
 	if isHex {
-		num, err := strconv.ParseInt(value[2:], 16, 64)
+		num, err := strconv.ParseUint(value[2:], 16, 64)
 		if err == nil {
 			return token.Token{Kind: token.IMMEDIATE, Value: fmt.Sprintf("%d", num), Start: start, End: l.position}
 		}
@@ -210,7 +210,7 @@ func (l *Lexer) readHexSequence(length int) int {
 		hexStr.WriteByte(l.ch)
 		l.readChar()
 	}
-	hexValue, err := strconv.ParseInt(hexStr.String(), 16, 32)
+	hexValue, err := strconv.ParseUint(hexStr.String(), 16, 64)
 	if err != nil {
 		return -1
 	}

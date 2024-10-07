@@ -150,7 +150,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 				num, _ := strconv.ParseInt(v.Value, 10, 8)
 				bytecode = append(bytecode, byte(num))
 			default:
-				return fmt.Errorf("mov expected argument #%d to be STRING_LITERAL or NUMBER_LITERAL got %s", i, v.String())
+				return fmt.Errorf("mov expected argument #%d to be STRING or NUMBER got %s", i, v.String())
 			}
 		}
 

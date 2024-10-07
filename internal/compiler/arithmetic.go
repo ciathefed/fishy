@@ -15,8 +15,22 @@ func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
 		return fmt.Errorf("%s expected 2 arguments", instruction.Name)
 	}
 
-	arg0 := instruction.Args[0]
-	arg1 := instruction.Args[1]
+	bytecode, kind, err := getArithmeticArgsBytecode(instruction.Args[0], instruction.Args[1])
+	if err != nil {
+		return err
+	}
+
+	op, err := getArithmeticOpcode(instruction.Name, kind)
+	if err != nil {
+		return err
+	}
+	*section = append(*section, utils.Bytes2(uint16(op))...)
+	*section = append(*section, bytecode...)
+
+	return nil
+}
+
+func getArithmeticArgsBytecode(arg0, arg1 interface{}) ([]byte, string, error) {
 	bytecode := []byte{}
 	kind := "REG_LIT"
 
@@ -24,7 +38,10 @@ func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
 	case *ast.Register:
 		switch a1 := arg1.(type) {
 		case *ast.NumberLiteral:
-			num, _ := strconv.ParseInt(a1.Value, 10, 32)
+			num, err := strconv.ParseInt(a1.Value, 10, 64)
+			if err != nil {
+				return nil, "", err
+			}
 			kind = "REG_LIT"
 			bytecode = append(bytecode, byte(a0.Value))
 			bytecode = append(bytecode, utils.Bytes4(uint32(num))...)
@@ -33,40 +50,32 @@ func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
 			bytecode = append(bytecode, byte(a0.Value))
 			bytecode = append(bytecode, byte(a1.Value))
 		default:
-			return fmt.Errorf("%s expected argument #2 to be REGISTER or NUMBER_LITERAL got %s", instruction.Name, a0.String())
+			return nil, "", fmt.Errorf("expected argument #2 to be REGISTER or NUMBER got %T", a1)
 		}
 	default:
-		return fmt.Errorf("%s expected argument #1 to be REGISTER got %s", instruction.Name, a0.String())
+		return nil, "", fmt.Errorf("expected argument #1 to be REGISTER got %T", a0)
 	}
 
-	switch instruction.Name {
-	case "add":
-		if kind == "REG_LIT" {
-			bytecode = append(utils.Bytes2(uint16(opcode.ADD_REG_LIT)), bytecode...)
-		} else {
-			bytecode = append(utils.Bytes2(uint16(opcode.ADD_REG_REG)), bytecode...)
-		}
-	case "sub":
-		if kind == "REG_LIT" {
-			bytecode = append(utils.Bytes2(uint16(opcode.SUB_REG_LIT)), bytecode...)
-		} else {
-			bytecode = append(utils.Bytes2(uint16(opcode.SUB_REG_REG)), bytecode...)
-		}
-	case "mul":
-		if kind == "REG_LIT" {
-			bytecode = append(utils.Bytes2(uint16(opcode.MUL_REG_LIT)), bytecode...)
-		} else {
-			bytecode = append(utils.Bytes2(uint16(opcode.MUL_REG_REG)), bytecode...)
-		}
-	case "div":
-		if kind == "REG_LIT" {
-			bytecode = append(utils.Bytes2(uint16(opcode.DIV_REG_LIT)), bytecode...)
-		} else {
-			bytecode = append(utils.Bytes2(uint16(opcode.DIV_REG_REG)), bytecode...)
-		}
+	return bytecode, kind, nil
+}
+
+func getArithmeticOpcode(name, kind string) (opcode.Opcode, error) {
+	opcodes := map[string]map[string]opcode.Opcode{
+		"add": {"REG_LIT": opcode.ADD_REG_LIT, "REG_REG": opcode.ADD_REG_REG},
+		"sub": {"REG_LIT": opcode.SUB_REG_LIT, "REG_REG": opcode.SUB_REG_REG},
+		"mul": {"REG_LIT": opcode.MUL_REG_LIT, "REG_REG": opcode.MUL_REG_REG},
+		"div": {"REG_LIT": opcode.DIV_REG_LIT, "REG_REG": opcode.DIV_REG_REG},
 	}
 
-	*section = append(*section, bytecode...)
+	ops, found := opcodes[name]
+	if !found {
+		return 0, fmt.Errorf("unknown arithmetic instruction %s", name)
+	}
 
-	return nil
+	op, found := ops[kind]
+	if !found {
+		return 0, fmt.Errorf("unknown argument combination for %s", name)
+	}
+
+	return op, nil
 }

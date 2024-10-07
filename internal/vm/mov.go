@@ -61,7 +61,7 @@ func (m *Machine) handleMovRegAof() {
 	addr := 0
 	switch v := value.(type) {
 	case *ast.NumberLiteral:
-		num, _ := strconv.ParseInt(v.Value, 10, 32)
+		num, _ := strconv.ParseInt(v.Value, 10, 64)
 		addr += int(num)
 	case *ast.Register:
 		num := m.getRegister(v.Value)
@@ -80,7 +80,7 @@ func (m *Machine) handleMovAofReg() {
 	addr := 0
 	switch v := value.(type) {
 	case *ast.NumberLiteral:
-		num, _ := strconv.ParseInt(v.Value, 10, 32)
+		num, _ := strconv.ParseInt(v.Value, 10, 64)
 		addr += int(num)
 	case *ast.Register:
 		num := m.getRegister(v.Value)
@@ -103,7 +103,7 @@ func (m *Machine) handleMovAofLit() {
 	addr := 0
 	switch v := value.(type) {
 	case *ast.NumberLiteral:
-		num, _ := strconv.ParseInt(v.Value, 10, 32)
+		num, _ := strconv.ParseInt(v.Value, 10, 64)
 		addr += int(num)
 	case *ast.Register:
 		num := m.getRegister(v.Value)

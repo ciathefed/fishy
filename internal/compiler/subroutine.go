@@ -19,7 +19,7 @@ func (c *Compiler) compileCall(instruction *ast.Instruction) error {
 
 	switch a := arg.(type) {
 	case *ast.NumberLiteral:
-		num, _ := strconv.ParseInt(a.Value, 10, 32)
+		num, _ := strconv.ParseInt(a.Value, 10, 64)
 		opcode := utils.Bytes2(uint16(opcode.CALL_LIT))
 		*section = append(*section, opcode...)
 		*section = append(*section, utils.Bytes4(uint32(num))...)
@@ -33,7 +33,7 @@ func (c *Compiler) compileCall(instruction *ast.Instruction) error {
 		})
 		*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
 	default:
-		return fmt.Errorf("%s expected argument #1 to be NUMBER_LITERAL or IDENTIFIER got %s", instruction.Name, a.String())
+		return fmt.Errorf("%s expected argument #1 to be NUMBER or IDENTIFIER got %s", instruction.Name, a.String())
 	}
 
 	return nil

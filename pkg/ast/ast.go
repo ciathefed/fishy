@@ -6,10 +6,6 @@ type Statement interface {
 	String() string
 }
 
-type Program struct {
-	Statements []Statement
-}
-
 type Label struct {
 	Name string
 }
@@ -30,7 +26,6 @@ type BinaryExpression struct {
 	Right    Value
 }
 
-func (p *Program) String() string          { return "PROGRAM" }
 func (l *Label) String() string            { return "LABEL" }
 func (i *Instruction) String() string      { return "INSTRUCTION" }
 func (s *Sequence) String() string         { return "SEQUENCE" }
