@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"fishy/pkg/ast"
 	"fishy/pkg/datatype"
+	"fishy/pkg/log"
 	"fishy/pkg/utils"
-	"fmt"
 	"strconv"
 )
 
@@ -73,7 +73,7 @@ func (m *Machine) handleMovRegAof() {
 		num := m.getRegister(v.Value)
 		addr += int(num)
 	default:
-		panic(fmt.Sprintf("unknown value to get address of: %#v", value))
+		log.Fatal("unknown value to get address of", "value", value)
 	}
 
 	if dt, ok := m.symbolTable[uint32(addr)]; ok {
@@ -105,7 +105,7 @@ func (m *Machine) handleMovAofReg() {
 		num := m.getRegister(v.Value)
 		addr += int(num)
 	default:
-		panic(fmt.Sprintf("unknown value to get address of: %#v", value))
+		log.Fatal("unknown value to get address of", "value", value)
 	}
 
 	pos := m.position()
@@ -131,7 +131,7 @@ func (m *Machine) handleMovAofLit() {
 		num := m.getRegister(v.Value)
 		addr += int(num)
 	default:
-		panic(fmt.Sprintf("unknown value to get address of: %#v", value))
+		log.Fatal("unknown value to get address of", "value", value)
 	}
 
 	pos := m.position()

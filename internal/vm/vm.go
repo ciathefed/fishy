@@ -4,10 +4,10 @@ import (
 	"encoding/binary"
 	"fishy/pkg/ast"
 	"fishy/pkg/datatype"
+	"fishy/pkg/log"
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
-	"log"
 	"strconv"
 )
 
@@ -91,9 +91,8 @@ func (m *Machine) Run() {
 			m.handleCallLit()
 		case opcode.RET:
 			m.handleRet()
-
 		default:
-			panic(fmt.Sprintf("unhandled instruction: %s", op.String()))
+			log.Fatal("unhandled instruction", "op", op.String())
 		}
 	}
 }
@@ -108,12 +107,10 @@ func (m *Machine) decodeNumber(dataType string, index int) int {
 	case "u32":
 		bytes := m.memory[index : index+4]
 		return int(binary.BigEndian.Uint32(bytes))
-	case "u64":
-		bytes := m.memory[index : index+8]
-		return int(binary.BigEndian.Uint64(bytes))
 	default:
-		panic(fmt.Sprintf("unknown data type: %s", dataType))
+		log.Fatal("unknown data type", "type", dataType)
 	}
+	return -1
 }
 
 func (m *Machine) decodeRegister(index int) int {
@@ -138,8 +135,9 @@ func (m *Machine) decodeValue() ast.Value {
 		m.incRegister(utils.RegisterToIndex("ip"), 4)
 		return &ast.NumberLiteral{Value: strconv.Itoa(num)}
 	default:
-		panic(fmt.Sprintf("unknown value index: %d", indexValue))
+		log.Fatal("unknown value index", "index", indexValue)
 	}
+	return nil
 }
 
 func (m *Machine) parserHeaderStart() {

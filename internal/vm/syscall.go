@@ -1,8 +1,8 @@
 package vm
 
 import (
+	"fishy/pkg/log"
 	"fishy/pkg/utils"
-	"fmt"
 	"os"
 	"syscall"
 )
@@ -34,7 +34,7 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 
 		fd, err := syscall.Open(string(path), int(mode), perm)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 			// fd = -1
 		}
 
@@ -48,7 +48,7 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		buffer := make([]byte, length)
 		n, err := syscall.Read(int(fd), buffer)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 			// n = -1
 		}
 
@@ -69,7 +69,7 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 
 		n, err := syscall.Write(int(fd), buffer)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 			// n = -1
 		}
 
@@ -90,6 +90,6 @@ func (m *Machine) handleSyscall() {
 	if call, ok := Syscalls[sc]; ok {
 		call(m)
 	} else {
-		panic(fmt.Sprintf("unknown syscall: %d", sc))
+		log.Fatal("unknown syscall", "index", sc)
 	}
 }

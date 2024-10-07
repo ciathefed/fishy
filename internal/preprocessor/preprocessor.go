@@ -3,6 +3,7 @@ package preprocessor
 import (
 	"bytes"
 	"fishy/internal/lexer"
+	"fishy/pkg/log"
 	"fishy/pkg/token"
 	"os"
 	"sort"
@@ -93,8 +94,7 @@ func (p *Preprocessor) processInclude(t token.Token) {
 
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-
-		panic("failed to include file: " + err.Error())
+		log.Fatal(err.Error())
 	}
 
 	start := t.Start

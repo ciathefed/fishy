@@ -263,7 +263,7 @@ func (c *Compiler) changeSection(section string) {
 	case "bss":
 		c.currentSection = SectionBSS
 	default:
-		panic(fmt.Sprintf("unknown section: %s", section))
+		log.Fatal("unknown section", "section", section)
 	}
 }
 
@@ -314,7 +314,7 @@ func (c *Compiler) resolveFixups() {
 				}
 			}
 		} else {
-			panic(fmt.Sprintf("label not defined: %s", fixup.label))
+			log.Fatal("label not defined", "label", fixup.label)
 		}
 	}
 }
@@ -349,6 +349,7 @@ func (c *Compiler) currentSectionBytecode() *[]byte {
 	case SectionBSS:
 		return &c.bss
 	default:
-		panic("unknown current section")
+		log.Fatal("unknown current section", "section", c.currentSection)
 	}
+	return nil
 }
