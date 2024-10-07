@@ -3,6 +3,7 @@ package parser
 import (
 	"fishy/internal/lexer"
 	"fishy/pkg/ast"
+	"fishy/pkg/datatype"
 	"fishy/pkg/token"
 	"fishy/pkg/utils"
 	"fmt"
@@ -72,7 +73,15 @@ func (p *Parser) parseIdentifier() (ast.Statement, error) {
 
 func (p *Parser) parseInstruction() (ast.Statement, error) {
 	instructionName := p.currentToken.Value
+	instruction := &ast.Instruction{Name: instructionName}
 	p.nextToken()
+
+	if p.currentToken.Kind == token.DATA_TYPE {
+		instruction.DataType = datatype.FromString(p.currentToken.Value)
+		p.nextToken()
+	} else {
+		instruction.DataType = datatype.UNSET
+	}
 
 	var args []ast.Value
 	for p.currentToken.Kind != token.EOF && p.currentToken.Kind != token.COMMA && p.currentToken.Kind != token.INSTRUCTION && p.currentToken.Kind != token.SEQUENCE && p.currentToken.Kind != token.LABEL {
@@ -91,7 +100,9 @@ func (p *Parser) parseInstruction() (ast.Statement, error) {
 		p.nextToken()
 	}
 
-	return &ast.Instruction{Name: instructionName, Args: args}, nil
+	instruction.Args = args
+
+	return instruction, nil
 }
 
 func (p *Parser) parseSequence() (ast.Statement, error) {

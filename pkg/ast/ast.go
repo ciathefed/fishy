@@ -1,6 +1,9 @@
 package ast
 
-import "fishy/pkg/token"
+import (
+	"fishy/pkg/datatype"
+	"fishy/pkg/token"
+)
 
 type Statement interface {
 	String() string
@@ -11,8 +14,9 @@ type Label struct {
 }
 
 type Instruction struct {
-	Name string
-	Args []Value
+	Name     string
+	DataType datatype.DataType
+	Args     []Value
 }
 
 type Sequence struct {

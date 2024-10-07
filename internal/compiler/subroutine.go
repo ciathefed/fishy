@@ -31,7 +31,7 @@ func (c *Compiler) compileCall(instruction *ast.Instruction) error {
 			section: c.currentSection,
 			label:   a.Value,
 		})
-		*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
+		*section = append(*section, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}...)
 	default:
 		return fmt.Errorf("%s expected argument #1 to be NUMBER or IDENTIFIER got %s", instruction.Name, a.String())
 	}

@@ -109,7 +109,7 @@ func (m *Machine) decodeNumber(dataType string, index int) int {
 	case "u32":
 		bytes := m.memory[index : index+4]
 		return int(binary.BigEndian.Uint32(bytes))
-	case "u64":
+	case "u64", "unset":
 		bytes := m.memory[index : index+8]
 		return int(binary.BigEndian.Uint64(bytes))
 	default:
@@ -123,7 +123,7 @@ func (m *Machine) decodeRegister(index int) int {
 	return int(v)
 }
 
-func (m *Machine) decodeValue() ast.Value {
+func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 	pos := m.position()
 	indexValue := m.memory[pos]
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
@@ -136,8 +136,8 @@ func (m *Machine) decodeValue() ast.Value {
 		return &ast.Register{Value: reg}
 	case 0, 1, 3, 4, 5:
 		pos := m.position()
-		num := m.decodeNumber("u64", pos)
-		m.incRegister(utils.RegisterToIndex("ip"), 8)
+		num := m.decodeNumber(dataType.String(), pos)
+		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 		return &ast.NumberLiteral{Value: strconv.Itoa(num)}
 	default:
 		log.Fatal("unknown value index", "index", indexValue)

@@ -4,6 +4,7 @@ import (
 	"fishy/pkg/token"
 	"fishy/pkg/utils"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -80,6 +81,9 @@ func (l *Lexer) NextToken() token.Token {
 		}
 		if isRegister(ident) {
 			return token.Token{Kind: token.REGISTER, Value: ident, Start: start, End: end}
+		}
+		if isDataType(ident) {
+			return token.Token{Kind: token.DATA_TYPE, Value: ident, Start: start, End: end}
 		}
 		return token.Token{Kind: token.IDENTIFIER, Value: ident, Start: start, End: end}
 	}
@@ -237,30 +241,20 @@ func (l *Lexer) peekChar() byte {
 }
 
 func isInstruction(ident string) bool {
-	for _, instr := range utils.Instructions {
-		if instr == ident {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(utils.Instructions, strings.ToLower(ident))
 }
 
 func isSequence(ident string) bool {
-	for _, seq := range utils.Sequences {
-		if seq == ident {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(utils.Sequences, strings.ToLower(ident))
 }
 
 func isRegister(ident string) bool {
-	for _, reg := range utils.Registers {
-		if reg == ident {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(utils.Registers, strings.ToLower(ident))
+
+}
+
+func isDataType(ident string) bool {
+	return slices.Contains(utils.DataTypes, strings.ToLower(ident))
 }
 
 func isLetter(ch byte) bool {

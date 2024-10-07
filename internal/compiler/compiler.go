@@ -19,9 +19,10 @@ const (
 )
 
 type Fixup struct {
-	addr    int
-	section Section
-	label   string
+	addr     int
+	section  Section
+	label    string
+	dataType datatype.DataType
 }
 
 type Compiler struct {
@@ -103,7 +104,7 @@ func (c *Compiler) compileLabel(label *ast.Label) error {
 	addr := uint64(len(*c.currentSectionBytecode()))
 	c.symbolTable.Set(label.Name, &Symbol{
 		name:     label.Name,
-		dataType: datatype.UNKNOWN,
+		dataType: datatype.UNSET,
 		addr:     addr,
 		section:  c.currentSection,
 	})
@@ -318,7 +319,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 func (c *Compiler) updateSymbolDataType(sequenceName string, newDataType datatype.DataType) {
 	if stmt, ok := c.lastLabel.(*ast.Label); ok {
 		if symbol := c.symbolTable.Get(stmt.Name); symbol != nil {
-			if symbol.dataType != datatype.UNKNOWN && symbol.dataType != newDataType {
+			if symbol.dataType != datatype.UNSET && symbol.dataType != newDataType {
 				log.Warn("label data type being changed but was already set", "old", symbol.dataType, "new", newDataType, "setter", sequenceName, "label", symbol.name)
 			}
 
@@ -347,41 +348,41 @@ func (c *Compiler) resolveFixups() {
 			fixupAddr := fixup.addr
 
 			if currentSection == symbol.section {
-				bytes := utils.Bytes8(symbol.addr)
+				bytes := fixup.dataType.MakeBytes(symbol.addr)
 
 				kv := c.symbolTable.Compile(symbol.name, symbol.addr)
 				c.headerSymbolTable = append(c.headerSymbolTable, kv...)
 
 				if fixup.section == SectionText {
-					for i := 0; i < 8; i++ {
+					for i := 0; i < fixup.dataType.Size(); i++ {
 						c.text[(fixupAddr + i)] = bytes[i]
 					}
 				} else if fixup.section == SectionData {
-					for i := 0; i < 8; i++ {
+					for i := 0; i < fixup.dataType.Size(); i++ {
 						c.data[(fixupAddr + i)] = bytes[i]
 					}
 				} else {
-					for i := 0; i < 8; i++ {
+					for i := 0; i < fixup.dataType.Size(); i++ {
 						c.bss[(fixupAddr + i)] = bytes[i]
 					}
 				}
 			} else {
 				offset := c.getAddrOffset(symbol.addr, symbol.section)
-				bytes := utils.Bytes8(offset)
+				bytes := fixup.dataType.MakeBytes(offset)
 
 				kv := c.symbolTable.Compile(symbol.name, offset)
 				c.headerSymbolTable = append(c.headerSymbolTable, kv...)
 
 				if fixup.section == SectionText {
-					for i := 0; i < 8; i++ {
+					for i := 0; i < fixup.dataType.Size(); i++ {
 						c.text[(fixupAddr + i)] = bytes[i]
 					}
 				} else if fixup.section == SectionData {
-					for i := 0; i < 8; i++ {
+					for i := 0; i < fixup.dataType.Size(); i++ {
 						c.data[(fixupAddr + i)] = bytes[i]
 					}
 				} else {
-					for i := 0; i < 8; i++ {
+					for i := 0; i < fixup.dataType.Size(); i++ {
 						c.bss[(fixupAddr + i)] = bytes[i]
 					}
 				}

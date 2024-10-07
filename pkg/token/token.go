@@ -10,6 +10,7 @@ const (
 	IDENTIFIER    TokenKind = "IDENTIFIER"
 	IMMEDIATE     TokenKind = "IMMEDIATE"
 	REGISTER      TokenKind = "REGISTER"
+	DATA_TYPE     TokenKind = "DATA_TYPE"
 	STRING        TokenKind = "STRING"
 	COMMENT       TokenKind = "COMMENT"
 	COMMA         TokenKind = "COMMA"

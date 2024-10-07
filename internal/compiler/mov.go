@@ -24,27 +24,32 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 		case *ast.Register:
 			opcode := utils.Bytes2(uint16(opcode.MOV_REG_REG))
 			*section = append(*section, opcode...)
+			*section = append(*section, byte(instruction.DataType))
 			*section = append(*section, byte(a0.Value))
 			*section = append(*section, byte(a1.Value))
 		case *ast.NumberLiteral:
 			num, _ := strconv.ParseUint(a1.Value, 10, 64)
 			opcode := utils.Bytes2(uint16(opcode.MOV_REG_LIT))
 			*section = append(*section, opcode...)
+			*section = append(*section, byte(instruction.DataType))
 			*section = append(*section, byte(a0.Value))
-			*section = append(*section, utils.Bytes8(num)...)
+			*section = append(*section, instruction.DataType.MakeBytes(num)...)
 		case *ast.Identifier:
 			opcode := utils.Bytes2(uint16(opcode.MOV_REG_ADR))
 			*section = append(*section, opcode...)
+			*section = append(*section, byte(instruction.DataType))
 			*section = append(*section, byte(a0.Value))
 			c.fixups = append(c.fixups, Fixup{
-				addr:    len(*section),
-				section: c.currentSection,
-				label:   a1.Value,
+				addr:     len(*section),
+				section:  c.currentSection,
+				label:    a1.Value,
+				dataType: instruction.DataType,
 			})
-			*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
+			*section = append(*section, instruction.DataType.MakeBytes(0)...)
 		case *ast.AddressOf:
 			opcode := utils.Bytes2(uint16(opcode.MOV_REG_AOF))
 			*section = append(*section, opcode...)
+			*section = append(*section, byte(instruction.DataType))
 			*section = append(*section, byte(a0.Value))
 
 			index := a1.Value.Index()
@@ -52,18 +57,19 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			case *ast.NumberLiteral:
 				num, _ := strconv.ParseUint(value.Value, 10, 64)
 				*section = append(*section, byte(index))
-				*section = append(*section, utils.Bytes8(num)...)
+				*section = append(*section, instruction.DataType.MakeBytes(num)...)
 			case *ast.Register:
 				*section = append(*section, byte(index))
 				*section = append(*section, byte(value.Value))
 			case *ast.Identifier:
 				*section = append(*section, byte(index))
 				c.fixups = append(c.fixups, Fixup{
-					addr:    len(*section),
-					section: c.currentSection,
-					label:   value.Value,
+					addr:     len(*section),
+					section:  c.currentSection,
+					label:    value.Value,
+					dataType: instruction.DataType,
 				})
-				*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
+				*section = append(*section, instruction.DataType.MakeBytes(0)...)
 			default:
 				return fmt.Errorf("mov expected argument #2 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
 			}
@@ -77,14 +83,16 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 		case *ast.Register:
 			opcode := utils.Bytes2(uint16(opcode.MOV_AOF_REG))
 			*section = append(*section, opcode...)
+			*section = append(*section, byte(instruction.DataType))
 			bytecode = append(bytecode, byte(a1.Value))
 		case *ast.NumberLiteral:
 			opcode := utils.Bytes2(uint16(opcode.MOV_AOF_LIT))
 			*section = append(*section, opcode...)
+			*section = append(*section, byte(instruction.DataType))
 			num, _ := strconv.ParseUint(a1.Value, 10, 64)
-			bytecode = append(bytecode, utils.Bytes8(num)...)
+			bytecode = append(bytecode, instruction.DataType.MakeBytes(num)...)
 		default:
-			return fmt.Errorf("mov expected argument #2 to be REGISTER got %s", a1.String())
+			return fmt.Errorf("mov expected argument #2 to be REGISTER or NUMBER got %s", a1.String())
 		}
 
 		index := a0.Value.Index()
@@ -92,18 +100,19 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 		case *ast.NumberLiteral:
 			num, _ := strconv.ParseUint(value.Value, 10, 64)
 			*section = append(*section, byte(index))
-			*section = append(*section, utils.Bytes8(num)...)
+			*section = append(*section, instruction.DataType.MakeBytes(num)...)
 		case *ast.Register:
 			*section = append(*section, byte(index))
 			*section = append(*section, byte(value.Value))
 		case *ast.Identifier:
 			*section = append(*section, byte(index))
 			c.fixups = append(c.fixups, Fixup{
-				addr:    len(*section),
-				section: c.currentSection,
-				label:   value.Value,
+				addr:     len(*section),
+				section:  c.currentSection,
+				label:    value.Value,
+				dataType: instruction.DataType,
 			})
-			*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
+			*section = append(*section, instruction.DataType.MakeBytes(0)...)
 		default:
 			return fmt.Errorf("mov expected argument #1 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
 		}

@@ -16,6 +16,8 @@ import (
 func (m *Machine) handleMovRegReg() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
+	m.incRegister(utils.RegisterToIndex("ip"), 1)
+
 	pos := m.position()
 	reg0 := m.decodeRegister(pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
@@ -32,12 +34,16 @@ func (m *Machine) handleMovRegLit() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
+	dt := datatype.DataType(m.decodeNumber("u8", pos))
+	m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+	pos = m.position()
 	reg := m.decodeRegister(pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
-	lit := m.decodeNumber("u64", pos)
-	m.incRegister(utils.RegisterToIndex("ip"), 8)
+	lit := m.decodeNumber(dt.String(), pos)
+	m.incRegister(utils.RegisterToIndex("ip"), uint64(dt.Size()))
 
 	m.setRegister(reg, uint64(lit))
 }
@@ -46,12 +52,16 @@ func (m *Machine) handleMovRegAdr() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
+	dt := datatype.DataType(m.decodeNumber("u8", pos))
+	m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+	pos = m.position()
 	reg := m.decodeRegister(pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
-	addr := m.decodeNumber("u64", pos)
-	m.incRegister(utils.RegisterToIndex("ip"), 8)
+	addr := m.decodeNumber(dt.String(), pos)
+	m.incRegister(utils.RegisterToIndex("ip"), uint64(dt.Size()))
 
 	m.setRegister(reg, uint64(addr))
 }
@@ -60,10 +70,14 @@ func (m *Machine) handleMovRegAof() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
+	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+	pos = m.position()
 	reg := m.decodeRegister(pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
-	value := m.decodeValue()
+	value := m.decodeValue(rdt)
 	addr := 0
 	switch v := value.(type) {
 	case *ast.NumberLiteral:
@@ -76,29 +90,36 @@ func (m *Machine) handleMovRegAof() {
 		log.Fatal("unknown value to get address of", "value", value)
 	}
 
-	if dt, ok := m.symbolTable[uint64(addr)]; ok {
-		switch dt {
-		case datatype.U8, datatype.UNKNOWN:
-			m.setRegister(reg, uint64(m.memory[addr]))
-		case datatype.U16:
-			num := binary.BigEndian.Uint16(m.memory[addr : addr+2])
-			m.setRegister(reg, uint64(num))
-		case datatype.U32:
-			num := binary.BigEndian.Uint32(m.memory[addr : addr+4])
-			m.setRegister(reg, uint64(num))
-		case datatype.U64:
-			num := binary.BigEndian.Uint64(m.memory[addr : addr+8])
-			m.setRegister(reg, num)
-		}
-	} else {
+	dt := datatype.DataType(datatype.UNSET)
+	if rdt != datatype.UNSET {
+		dt = rdt
+	} else if adt, ok := m.symbolTable[uint64(addr)]; ok {
+		dt = adt
+	}
+
+	switch dt {
+	case datatype.U8:
 		m.setRegister(reg, uint64(m.memory[addr]))
+	case datatype.U16:
+		num := binary.BigEndian.Uint16(m.memory[addr : addr+2])
+		m.setRegister(reg, uint64(num))
+	case datatype.U32:
+		num := binary.BigEndian.Uint32(m.memory[addr : addr+4])
+		m.setRegister(reg, uint64(num))
+	case datatype.U64, datatype.UNSET:
+		num := binary.BigEndian.Uint64(m.memory[addr : addr+8])
+		m.setRegister(reg, num)
 	}
 }
 
 func (m *Machine) handleMovAofReg() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
-	value := m.decodeValue()
+	pos := m.position()
+	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+	value := m.decodeValue(rdt)
 	addr := 0
 	switch v := value.(type) {
 	case *ast.NumberLiteral:
@@ -111,25 +132,27 @@ func (m *Machine) handleMovAofReg() {
 		log.Fatal("unknown value to get address of", "value", value)
 	}
 
-	pos := m.position()
+	pos = m.position()
 	reg := m.decodeRegister(pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
-	if dt, ok := m.symbolTable[uint64(addr)]; ok {
-		switch dt {
-		case datatype.U8, datatype.UNKNOWN:
-			m.memory[addr] = byte(m.getRegister(reg))
-		case datatype.U16:
-			bytes := utils.Bytes2(uint16(m.getRegister(reg)))
-			copy(m.memory[addr:addr+2], bytes[:])
-		case datatype.U32:
-			bytes := utils.Bytes4(uint32(m.getRegister(reg)))
-			copy(m.memory[addr:addr+4], bytes[:])
-		case datatype.U64:
-			bytes := utils.Bytes8(m.getRegister(reg))
-			copy(m.memory[addr:addr+8], bytes[:])
-		}
-	} else {
+	dt := datatype.DataType(datatype.UNSET)
+	if rdt != datatype.UNSET {
+		dt = rdt
+	} else if adt, ok := m.symbolTable[uint64(addr)]; ok {
+		dt = adt
+	}
+
+	switch dt {
+	case datatype.U8:
+		m.memory[addr] = byte(m.getRegister(reg))
+	case datatype.U16:
+		bytes := utils.Bytes2(uint16(m.getRegister(reg)))
+		copy(m.memory[addr:addr+2], bytes[:])
+	case datatype.U32:
+		bytes := utils.Bytes4(uint32(m.getRegister(reg)))
+		copy(m.memory[addr:addr+4], bytes[:])
+	case datatype.U64, datatype.UNSET:
 		bytes := utils.Bytes8(m.getRegister(reg))
 		copy(m.memory[addr:addr+8], bytes[:])
 	}
@@ -138,7 +161,11 @@ func (m *Machine) handleMovAofReg() {
 func (m *Machine) handleMovAofLit() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
-	value := m.decodeValue()
+	pos := m.position()
+	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+	value := m.decodeValue(rdt)
 	addr := 0
 	switch v := value.(type) {
 	case *ast.NumberLiteral:
@@ -151,25 +178,27 @@ func (m *Machine) handleMovAofLit() {
 		log.Fatal("unknown value to get address of", "value", value)
 	}
 
-	pos := m.position()
-	lit := m.decodeNumber("u64", pos)
-	m.incRegister(utils.RegisterToIndex("ip"), 8)
+	pos = m.position()
+	lit := m.decodeNumber(rdt.String(), pos)
+	m.incRegister(utils.RegisterToIndex("ip"), uint64(rdt.Size()))
 
-	if dt, ok := m.symbolTable[uint64(addr)]; ok {
-		switch dt {
-		case datatype.U8, datatype.UNKNOWN:
-			m.memory[addr] = byte(lit)
-		case datatype.U16:
-			bytes := utils.Bytes2(uint16(lit))
-			copy(m.memory[addr:addr+2], bytes[:])
-		case datatype.U32:
-			bytes := utils.Bytes4(uint32(lit))
-			copy(m.memory[addr:addr+4], bytes[:])
-		case datatype.U64:
-			bytes := utils.Bytes8(uint64(lit))
-			copy(m.memory[addr:addr+8], bytes[:])
-		}
-	} else {
+	dt := datatype.DataType(datatype.UNSET)
+	if rdt != datatype.UNSET {
+		dt = rdt
+	} else if adt, ok := m.symbolTable[uint64(addr)]; ok {
+		dt = adt
+	}
+
+	switch dt {
+	case datatype.U8:
+		m.memory[addr] = byte(lit)
+	case datatype.U16:
+		bytes := utils.Bytes2(uint16(lit))
+		copy(m.memory[addr:addr+2], bytes[:])
+	case datatype.U32:
+		bytes := utils.Bytes4(uint32(lit))
+		copy(m.memory[addr:addr+4], bytes[:])
+	case datatype.U64, datatype.UNSET:
 		bytes := utils.Bytes8(uint64(lit))
 		copy(m.memory[addr:addr+8], bytes[:])
 	}

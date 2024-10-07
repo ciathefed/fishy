@@ -26,6 +26,12 @@ var Registers = []string{
 	"ip", "fp", "sp", "cp", "er",
 }
 
+var DataTypes = []string{
+	"u8", "u16", "u32", "u64",
+	// "i8", "i16", "i32", "i64",
+	// "f32", "f64",
+}
+
 func RegisterToIndex(name string) int {
 	for i, register := range Registers {
 		if name == register {
