@@ -27,7 +27,7 @@ Welcome to the Fishy CLI Tool! This application consists of a compiler and virtu
 ## Notes
 
 1. The pre-processor was poorly made and until it is re-done, expect issues.
-2. The virtual machine currently only supports `uint32`.
+2. All immediate values are defaulted to `uint32`.
 3. The sections `text`, `data`, and `bss` only tell the compiler where to put the bytecode (in that order), so `bss` occupies physical space in the final bytecode. This isn't saying you shouldn't use them as you would in other assembly languages, just keep in mind something like `resp 32` will add 32 bytes in the final bytecode.
 
 ## Installation

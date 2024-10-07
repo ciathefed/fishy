@@ -1,11 +1,17 @@
 package vm
 
 import (
+	"encoding/binary"
 	"fishy/pkg/ast"
+	"fishy/pkg/datatype"
 	"fishy/pkg/utils"
 	"fmt"
 	"strconv"
 )
+
+// TODO: change registers to uint64?
+// TODO: floats
+// TODO: handle memory corruption (moving 4-byte number to 2-byte number)
 
 func (m *Machine) handleMovRegReg() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
@@ -70,7 +76,20 @@ func (m *Machine) handleMovRegAof() {
 		panic(fmt.Sprintf("unknown value to get address of: %#v", value))
 	}
 
-	m.setRegister(reg, uint32(m.memory[addr]))
+	if dt, ok := m.symbolTable[uint32(addr)]; ok {
+		switch dt {
+		case datatype.U8, datatype.UNKNOWN:
+			m.setRegister(reg, uint32(m.memory[addr]))
+		case datatype.U16:
+			num := binary.BigEndian.Uint16(m.memory[addr : addr+2])
+			m.setRegister(reg, uint32(num))
+		case datatype.U32:
+			num := binary.BigEndian.Uint32(m.memory[addr : addr+4])
+			m.setRegister(reg, num)
+		}
+	} else {
+		m.setRegister(reg, uint32(m.memory[addr]))
+	}
 }
 
 func (m *Machine) handleMovAofReg() {
@@ -93,7 +112,10 @@ func (m *Machine) handleMovAofReg() {
 	reg := m.decodeRegister(pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
-	m.memory[addr] = byte(m.getRegister(reg))
+	bytes := utils.Bytes4(m.getRegister(reg))
+	for i := 0; i < 4; i++ {
+		m.memory[addr+i] = bytes[i]
+	}
 }
 
 func (m *Machine) handleMovAofLit() {
@@ -116,5 +138,8 @@ func (m *Machine) handleMovAofLit() {
 	lit := m.decodeNumber("u32", pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 4)
 
-	m.memory[addr] = byte(lit)
+	bytes := utils.Bytes4(uint32(lit))
+	for i := 0; i < 4; i++ {
+		m.memory[addr+i] = bytes[i]
+	}
 }

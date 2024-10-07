@@ -11,90 +11,106 @@ import (
 func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 	section := c.currentSectionBytecode()
 
-	if len(instruction.Args) != 2 {
-		return fmt.Errorf("mov expected 2 arguments, got %d", len(instruction.Args))
+	if len(instruction.Args) < 2 {
+		return fmt.Errorf("mov expected 2 arguments")
 	}
 
-	arg0, arg1 := instruction.Args[0], instruction.Args[1]
-
-	appendBytecode := func(op opcode.Opcode, args ...interface{}) {
-		opcodeBytes := utils.Bytes2(uint16(op))
-		*section = append(*section, opcodeBytes...)
-		for _, arg := range args {
-			switch v := arg.(type) {
-			case byte:
-				*section = append(*section, v)
-			case uint32:
-				*section = append(*section, utils.Bytes4(v)...)
-			default:
-				if id, ok := v.(*ast.Identifier); ok {
-					c.fixups = append(c.fixups, Fixup{
-						addr:    len(*section),
-						section: c.currentSection,
-						label:   id.Value,
-					})
-					*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
-				}
-			}
-		}
-	}
+	arg0 := instruction.Args[0]
+	arg1 := instruction.Args[1]
 
 	switch a0 := arg0.(type) {
 	case *ast.Register:
 		switch a1 := arg1.(type) {
 		case *ast.Register:
-			appendBytecode(opcode.MOV_REG_REG, byte(a0.Value), byte(a1.Value))
+			opcode := utils.Bytes2(uint16(opcode.MOV_REG_REG))
+			*section = append(*section, opcode...)
+			*section = append(*section, byte(a0.Value))
+			*section = append(*section, byte(a1.Value))
 		case *ast.NumberLiteral:
 			num, _ := strconv.ParseInt(a1.Value, 10, 64)
-			appendBytecode(opcode.MOV_REG_LIT, byte(a0.Value), uint32(num))
+			opcode := utils.Bytes2(uint16(opcode.MOV_REG_LIT))
+			*section = append(*section, opcode...)
+			*section = append(*section, byte(a0.Value))
+			*section = append(*section, utils.Bytes4(uint32(num))...)
 		case *ast.Identifier:
-			appendBytecode(opcode.MOV_REG_ADR, byte(a0.Value), a1)
+			opcode := utils.Bytes2(uint16(opcode.MOV_REG_ADR))
+			*section = append(*section, opcode...)
+			*section = append(*section, byte(a0.Value))
+			c.fixups = append(c.fixups, Fixup{
+				addr:    len(*section),
+				section: c.currentSection,
+				label:   a1.Value,
+			})
+			*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
 		case *ast.AddressOf:
+			opcode := utils.Bytes2(uint16(opcode.MOV_REG_AOF))
+			*section = append(*section, opcode...)
+			*section = append(*section, byte(a0.Value))
+
 			index := a1.Value.Index()
-			appendBytecode(opcode.MOV_REG_AOF, byte(a0.Value), byte(index))
 			switch value := a1.Value.(type) {
 			case *ast.NumberLiteral:
 				num, _ := strconv.ParseInt(value.Value, 10, 64)
-				*section = append(*section, uint8(index))
+				*section = append(*section, byte(index))
 				*section = append(*section, utils.Bytes4(uint32(num))...)
 			case *ast.Register:
-				*section = append(*section, uint8(index), byte(value.Value))
+				*section = append(*section, byte(index))
+				*section = append(*section, byte(value.Value))
 			case *ast.Identifier:
-				appendBytecode(opcode.MOV_REG_AOF, byte(index), value)
+				*section = append(*section, byte(index))
+				c.fixups = append(c.fixups, Fixup{
+					addr:    len(*section),
+					section: c.currentSection,
+					label:   value.Value,
+				})
+				*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
 			default:
-				return fmt.Errorf("mov expected argument #2 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER], got %s", value.String())
+				return fmt.Errorf("mov expected argument #2 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
 			}
 		default:
-			return fmt.Errorf("mov expected argument #2 to be REGISTER, NUMBER, IDENTIFIER, or ADDRESS_OF, got %s", arg1.String())
+			return fmt.Errorf("mov expected argument #2 to be REGISTER, NUMBER, IDENTIFIER, or ADDRESS_OF got %s", arg1.String())
 		}
 
 	case *ast.AddressOf:
-		index := a0.Value.Index()
+		bytecode := []byte{}
 		switch a1 := arg1.(type) {
 		case *ast.Register:
-			appendBytecode(opcode.MOV_AOF_REG, byte(a1.Value))
+			opcode := utils.Bytes2(uint16(opcode.MOV_AOF_REG))
+			*section = append(*section, opcode...)
+			bytecode = append(bytecode, byte(a1.Value))
 		case *ast.NumberLiteral:
+			opcode := utils.Bytes2(uint16(opcode.MOV_AOF_LIT))
+			*section = append(*section, opcode...)
 			num, _ := strconv.ParseInt(a1.Value, 10, 64)
-			appendBytecode(opcode.MOV_AOF_LIT, uint32(num))
+			bytecode = append(bytecode, utils.Bytes4(uint32(num))...)
 		default:
-			return fmt.Errorf("mov expected argument #2 to be REGISTER or NUMBER, got %s", a1.String())
+			return fmt.Errorf("mov expected argument #2 to be REGISTER got %s", a1.String())
 		}
 
+		index := a0.Value.Index()
 		switch value := a0.Value.(type) {
 		case *ast.NumberLiteral:
 			num, _ := strconv.ParseInt(value.Value, 10, 64)
-			*section = append(*section, uint8(index))
+			*section = append(*section, byte(index))
 			*section = append(*section, utils.Bytes4(uint32(num))...)
 		case *ast.Register:
-			*section = append(*section, uint8(index), byte(value.Value))
+			*section = append(*section, byte(index))
+			*section = append(*section, byte(value.Value))
 		case *ast.Identifier:
-			appendBytecode(opcode.MOV_AOF_REG, value)
+			*section = append(*section, byte(index))
+			c.fixups = append(c.fixups, Fixup{
+				addr:    len(*section),
+				section: c.currentSection,
+				label:   value.Value,
+			})
+			*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
 		default:
-			return fmt.Errorf("mov expected argument #1 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER], got %s", value.String())
+			return fmt.Errorf("mov expected argument #1 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
 		}
 
+		*section = append(*section, bytecode...)
 	default:
-		return fmt.Errorf("mov expected argument #1 to be REGISTER or ADDRESS_OF, got %s", arg0.String())
+		return fmt.Errorf("mov expected argument #1 to be REGISTER or ADDRESS_OF got %s", arg0.String())
 	}
 	return nil
 }

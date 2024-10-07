@@ -2,6 +2,8 @@ package compiler
 
 import (
 	"fishy/pkg/ast"
+	"fishy/pkg/datatype"
+	"fishy/pkg/log"
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
@@ -16,11 +18,6 @@ const (
 	SectionBSS
 )
 
-type Label struct {
-	addr    int
-	section Section
-}
-
 type Fixup struct {
 	addr    int
 	section Section
@@ -28,26 +25,34 @@ type Fixup struct {
 }
 
 type Compiler struct {
-	statements     []ast.Statement
-	header         []byte
-	text           []byte
-	data           []byte
-	bss            []byte
-	labels         map[string]Label
-	fixups         []Fixup
+	statements    []ast.Statement
+	lastStatement ast.Statement
+
+	headerStart       []byte
+	headerSymbolTable []byte
+
+	text []byte
+	data []byte
+	bss  []byte
+
+	symbolTable *SymbolTable
+	fixups      []Fixup
+
 	currentSection Section
 }
 
 func New(statements []ast.Statement) *Compiler {
 	return &Compiler{
-		statements:     statements,
-		header:         make([]byte, 4),
-		text:           make([]byte, 0),
-		data:           make([]byte, 0),
-		bss:            make([]byte, 0),
-		labels:         make(map[string]Label),
-		fixups:         make([]Fixup, 0),
-		currentSection: SectionText,
+		statements:        statements,
+		lastStatement:     nil,
+		headerStart:       make([]byte, 4),
+		headerSymbolTable: make([]byte, 0),
+		text:              make([]byte, 0),
+		data:              make([]byte, 0),
+		bss:               make([]byte, 0),
+		symbolTable:       NewSymbolTable(),
+		fixups:            make([]Fixup, 0),
+		currentSection:    SectionText,
 	}
 }
 
@@ -70,13 +75,26 @@ func (c *Compiler) Compile() ([]byte, error) {
 				return nil, err
 			}
 		}
+
+		// TODO: update only after label?
+		c.lastStatement = stmt
 	}
 
 	c.resolveFixups()
 
-	c.writeHeader()
+	c.writeHeaderStart()
 
-	bytecode := append(c.header, c.text...)
+	bytecode := c.headerStart
+
+	stStart := len(bytecode) + 8
+	stEnd := stStart + len(c.headerSymbolTable)
+
+	bytecode = append(bytecode, utils.Bytes4(uint32(stStart))...)
+	bytecode = append(bytecode, utils.Bytes4(uint32(stEnd))...)
+
+	bytecode = append(bytecode, c.headerSymbolTable...)
+
+	bytecode = append(bytecode, c.text...)
 	bytecode = append(bytecode, c.data...)
 	bytecode = append(bytecode, c.bss...)
 	return bytecode, nil
@@ -84,7 +102,12 @@ func (c *Compiler) Compile() ([]byte, error) {
 
 func (c *Compiler) compileLabel(label *ast.Label) error {
 	addr := len(*c.currentSectionBytecode())
-	c.labels[label.Name] = Label{addr: addr, section: c.currentSection}
+	c.symbolTable.Set(label.Name, &Symbol{
+		name:     label.Name,
+		dataType: datatype.UNKNOWN,
+		addr:     addr,
+		section:  c.currentSection,
+	})
 	return nil
 }
 
@@ -146,6 +169,8 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		bytecode := []byte{}
 
+		c.updateSymbolDataType(sequence.Name, datatype.U8)
+
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
 			case *ast.StringLiteral:
@@ -153,6 +178,42 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 			case *ast.NumberLiteral:
 				num, _ := strconv.ParseInt(v.Value, 10, 8)
 				bytecode = append(bytecode, byte(num))
+			default:
+				return fmt.Errorf("%s expected argument #%d to be STRING or NUMBER got %s", sequence.Name, i, v.String())
+			}
+		}
+
+		*section = append(*section, bytecode...)
+
+	case "dw":
+		section := c.currentSectionBytecode()
+		bytecode := []byte{}
+
+		c.updateSymbolDataType(sequence.Name, datatype.U16)
+
+		for i, value := range sequence.Values {
+			switch v := value.(type) {
+			case *ast.NumberLiteral:
+				num, _ := strconv.ParseInt(v.Value, 10, 16)
+				bytecode = append(bytecode, utils.Bytes2(uint16(num))...)
+			default:
+				return fmt.Errorf("%s expected argument #%d to be STRING or NUMBER got %s", sequence.Name, i, v.String())
+			}
+		}
+
+		*section = append(*section, bytecode...)
+
+	case "dd":
+		section := c.currentSectionBytecode()
+		bytecode := []byte{}
+
+		c.updateSymbolDataType(sequence.Name, datatype.U32)
+
+		for i, value := range sequence.Values {
+			switch v := value.(type) {
+			case *ast.NumberLiteral:
+				num, _ := strconv.ParseInt(v.Value, 10, 32)
+				bytecode = append(bytecode, utils.Bytes4(uint32(num))...)
 			default:
 				return fmt.Errorf("%s expected argument #%d to be STRING or NUMBER got %s", sequence.Name, i, v.String())
 			}
@@ -181,6 +242,18 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 	return nil
 }
 
+func (c *Compiler) updateSymbolDataType(sequenceName string, newDataType datatype.DataType) {
+	if stmt, ok := c.lastStatement.(*ast.Label); ok {
+		if symbol := c.symbolTable.Get(stmt.Name); symbol != nil {
+			if symbol.dataType != datatype.UNKNOWN && symbol.dataType != newDataType {
+				log.Warn("label data type being changed but was already set", "sequence", sequenceName, "label", symbol.name, "type", symbol.dataType)
+			}
+
+			symbol.dataType = newDataType
+		}
+	}
+}
+
 func (c *Compiler) changeSection(section string) {
 	switch section {
 	case "text":
@@ -196,33 +269,47 @@ func (c *Compiler) changeSection(section string) {
 
 func (c *Compiler) resolveFixups() {
 	for _, fixup := range c.fixups {
-		if label, ok := c.labels[fixup.label]; ok {
+		if symbol := c.symbolTable.Get(fixup.label); symbol != nil {
 			currentSection := fixup.section
 			fixupAddr := fixup.addr
 
-			if currentSection == label.section {
-				bytes := utils.Bytes4(uint32(label.addr))
+			if currentSection == symbol.section {
+				bytes := utils.Bytes4(uint32(symbol.addr))
+
+				kv := c.symbolTable.Compile(symbol.name, symbol.addr)
+				c.headerSymbolTable = append(c.headerSymbolTable, kv...)
 
 				if fixup.section == SectionText {
 					for i := 0; i < 4; i++ {
 						c.text[(fixupAddr + i)] = bytes[i]
 					}
-				} else {
+				} else if fixup.section == SectionData {
 					for i := 0; i < 4; i++ {
 						c.data[(fixupAddr + i)] = bytes[i]
+					}
+				} else {
+					for i := 0; i < 4; i++ {
+						c.bss[(fixupAddr + i)] = bytes[i]
 					}
 				}
 			} else {
-				offset := c.getAddrOffset(label.addr, label.section)
+				offset := c.getAddrOffset(symbol.addr, symbol.section)
 				bytes := utils.Bytes4(uint32(offset))
+
+				kv := c.symbolTable.Compile(symbol.name, offset)
+				c.headerSymbolTable = append(c.headerSymbolTable, kv...)
 
 				if fixup.section == SectionText {
 					for i := 0; i < 4; i++ {
 						c.text[(fixupAddr + i)] = bytes[i]
 					}
-				} else {
+				} else if fixup.section == SectionData {
 					for i := 0; i < 4; i++ {
 						c.data[(fixupAddr + i)] = bytes[i]
+					}
+				} else {
+					for i := 0; i < 4; i++ {
+						c.bss[(fixupAddr + i)] = bytes[i]
 					}
 				}
 			}
@@ -232,11 +319,11 @@ func (c *Compiler) resolveFixups() {
 	}
 }
 
-func (c *Compiler) writeHeader() {
-	if label, ok := c.labels["_start"]; ok {
-		addr := c.getAddrOffset(label.addr, label.section)
+func (c *Compiler) writeHeaderStart() {
+	if symbol := c.symbolTable.Get("_start"); symbol != nil {
+		addr := c.getAddrOffset(symbol.addr, symbol.section)
 		bytes := utils.Bytes4(uint32(addr))
-		copy(c.header, bytes[:])
+		copy(c.headerStart, bytes[:])
 	}
 }
 

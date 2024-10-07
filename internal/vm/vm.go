@@ -3,26 +3,37 @@ package vm
 import (
 	"encoding/binary"
 	"fishy/pkg/ast"
+	"fishy/pkg/datatype"
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
+	"log"
 	"strconv"
 )
 
 type Machine struct {
-	registers []uint32
-	memory    []byte
-	debug     bool
+	registers   []uint32
+	memory      []byte
+	symbolTable map[uint32]datatype.DataType
+	debug       bool
 }
 
 func New(bytecode []byte, memorySize int, debug bool) *Machine {
-	memory := make([]byte, memorySize-len(bytecode)+4)
-	memory = append(bytecode, memory...)
+	m := &Machine{
+		registers:   make([]uint32, 21),
+		memory:      bytecode,
+		symbolTable: make(map[uint32]datatype.DataType),
+		debug:       debug,
+	}
 
-	m := &Machine{registers: make([]uint32, 21), memory: memory, debug: debug}
-	m.parseHeader()
+	m.parserHeaderStart()
+	m.parseHeaderSymbolTable()
+
+	m.memory = append(m.memory, make([]byte, memorySize-len(m.memory))...)
+
 	m.setRegister(utils.RegisterToIndex("sp"), uint32(len(m.memory)))
 	m.setRegister(utils.RegisterToIndex("fp"), uint32(len(m.memory)))
+
 	return m
 }
 
@@ -131,11 +142,30 @@ func (m *Machine) decodeValue() ast.Value {
 	}
 }
 
-func (m *Machine) parseHeader() {
-	pos := m.position()
-	start := m.decodeNumber("u32", pos)
+func (m *Machine) parserHeaderStart() {
+	start := m.readLiteral()
 	m.memory = m.memory[4:]
 	m.setRegister(utils.RegisterToIndex("ip"), uint32(start))
+}
+
+func (m *Machine) parseHeaderSymbolTable() {
+	start := binary.BigEndian.Uint32(m.memory[:4]) - 4
+	end := binary.BigEndian.Uint32(m.memory[4:8]) - 4
+
+	keyValues := m.memory[start:end]
+
+	for i := 0; i < len(keyValues); i += 8 {
+		if i+7 >= len(keyValues) {
+			log.Fatal("symbol table is not multiple of 8", "length", len(keyValues))
+		}
+
+		key := binary.BigEndian.Uint32(keyValues[i : i+4])
+		value := binary.BigEndian.Uint32(keyValues[i+4 : i+8])
+
+		m.symbolTable[key] = datatype.DataType(value)
+	}
+
+	m.memory = m.memory[end:]
 }
 
 func (m *Machine) position() int {
@@ -203,6 +233,9 @@ func (m *Machine) DumpRegisters() {
 }
 
 func (m *Machine) DumpMemory(start int, end int) {
+	if end >= len(m.memory) {
+		end = len(m.memory)
+	}
 	bytecode := m.memory[start:end]
 	numLines := (len(bytecode) + 15) / 16
 
