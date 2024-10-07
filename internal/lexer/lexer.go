@@ -179,7 +179,7 @@ func (l *Lexer) readImmediate() token.Token {
 			return token.Token{Kind: token.IMMEDIATE, Value: fmt.Sprintf("%d", num), Start: start, End: l.position}
 		}
 	} else if isOct {
-		num, err := strconv.ParseInt(value[2:], 8, 64)
+		num, err := strconv.ParseUint(value[2:], 8, 64)
 		if err == nil {
 			return token.Token{Kind: token.IMMEDIATE, Value: fmt.Sprintf("%d", num), Start: start, End: l.position}
 		}

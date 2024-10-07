@@ -38,13 +38,13 @@ func getArithmeticArgsBytecode(arg0, arg1 interface{}) ([]byte, string, error) {
 	case *ast.Register:
 		switch a1 := arg1.(type) {
 		case *ast.NumberLiteral:
-			num, err := strconv.ParseInt(a1.Value, 10, 64)
+			num, err := strconv.ParseUint(a1.Value, 10, 64)
 			if err != nil {
 				return nil, "", err
 			}
 			kind = "REG_LIT"
 			bytecode = append(bytecode, byte(a0.Value))
-			bytecode = append(bytecode, utils.Bytes4(uint32(num))...)
+			bytecode = append(bytecode, utils.Bytes8(num)...)
 		case *ast.Register:
 			kind = "REG_REG"
 			bytecode = append(bytecode, byte(a0.Value))

@@ -27,11 +27,11 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			*section = append(*section, byte(a0.Value))
 			*section = append(*section, byte(a1.Value))
 		case *ast.NumberLiteral:
-			num, _ := strconv.ParseInt(a1.Value, 10, 64)
+			num, _ := strconv.ParseUint(a1.Value, 10, 64)
 			opcode := utils.Bytes2(uint16(opcode.MOV_REG_LIT))
 			*section = append(*section, opcode...)
 			*section = append(*section, byte(a0.Value))
-			*section = append(*section, utils.Bytes4(uint32(num))...)
+			*section = append(*section, utils.Bytes8(num)...)
 		case *ast.Identifier:
 			opcode := utils.Bytes2(uint16(opcode.MOV_REG_ADR))
 			*section = append(*section, opcode...)
@@ -41,7 +41,7 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 				section: c.currentSection,
 				label:   a1.Value,
 			})
-			*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
+			*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
 		case *ast.AddressOf:
 			opcode := utils.Bytes2(uint16(opcode.MOV_REG_AOF))
 			*section = append(*section, opcode...)
@@ -50,9 +50,9 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			index := a1.Value.Index()
 			switch value := a1.Value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseInt(value.Value, 10, 64)
+				num, _ := strconv.ParseUint(value.Value, 10, 64)
 				*section = append(*section, byte(index))
-				*section = append(*section, utils.Bytes4(uint32(num))...)
+				*section = append(*section, utils.Bytes8(num)...)
 			case *ast.Register:
 				*section = append(*section, byte(index))
 				*section = append(*section, byte(value.Value))
@@ -63,7 +63,7 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 					section: c.currentSection,
 					label:   value.Value,
 				})
-				*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
+				*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
 			default:
 				return fmt.Errorf("mov expected argument #2 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
 			}
@@ -81,8 +81,8 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 		case *ast.NumberLiteral:
 			opcode := utils.Bytes2(uint16(opcode.MOV_AOF_LIT))
 			*section = append(*section, opcode...)
-			num, _ := strconv.ParseInt(a1.Value, 10, 64)
-			bytecode = append(bytecode, utils.Bytes4(uint32(num))...)
+			num, _ := strconv.ParseUint(a1.Value, 10, 64)
+			bytecode = append(bytecode, utils.Bytes8(num)...)
 		default:
 			return fmt.Errorf("mov expected argument #2 to be REGISTER got %s", a1.String())
 		}
@@ -90,9 +90,9 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 		index := a0.Value.Index()
 		switch value := a0.Value.(type) {
 		case *ast.NumberLiteral:
-			num, _ := strconv.ParseInt(value.Value, 10, 64)
+			num, _ := strconv.ParseUint(value.Value, 10, 64)
 			*section = append(*section, byte(index))
-			*section = append(*section, utils.Bytes4(uint32(num))...)
+			*section = append(*section, utils.Bytes8(num)...)
 		case *ast.Register:
 			*section = append(*section, byte(index))
 			*section = append(*section, byte(value.Value))
@@ -103,7 +103,7 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 				section: c.currentSection,
 				label:   value.Value,
 			})
-			*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
+			*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
 		default:
 			return fmt.Errorf("mov expected argument #1 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
 		}

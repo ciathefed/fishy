@@ -32,13 +32,13 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 
 		path := m.memory[addr : addr+length]
 
-		fd, err := syscall.Open(string(path), int(mode), perm)
+		fd, err := syscall.Open(string(path), int(mode), uint32(perm))
 		if err != nil {
 			log.Fatal(err)
 			// fd = -1
 		}
 
-		m.setRegister(utils.RegisterToIndex("x0"), uint32(fd))
+		m.setRegister(utils.RegisterToIndex("x0"), uint64(fd))
 	},
 	SYS_READ: func(m *Machine) {
 		fd := m.getRegister(utils.RegisterToIndex("x0"))
@@ -56,7 +56,7 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 			m.memory[int(addr)+i] = buffer[i]
 		}
 
-		m.setRegister(utils.RegisterToIndex("x0"), uint32(n))
+		m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 	},
 	SYS_WRITE: func(m *Machine) {
 		fd := m.getRegister(utils.RegisterToIndex("x0"))
@@ -73,7 +73,7 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 			// n = -1
 		}
 
-		m.setRegister(utils.RegisterToIndex("x0"), uint32(n))
+		m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 	},
 	SYS_CLOSE: func(m *Machine) {
 		fd := m.getRegister(utils.RegisterToIndex("x0"))

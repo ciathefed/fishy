@@ -9,20 +9,21 @@ import (
 	"fishy/pkg/utils"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type Machine struct {
-	registers   []uint32
+	registers   []uint64
 	memory      []byte
-	symbolTable map[uint32]datatype.DataType
+	symbolTable map[uint64]datatype.DataType
 	debug       bool
 }
 
 func New(bytecode []byte, memorySize int, debug bool) *Machine {
 	m := &Machine{
-		registers:   make([]uint32, 21),
+		registers:   make([]uint64, 21),
 		memory:      bytecode,
-		symbolTable: make(map[uint32]datatype.DataType),
+		symbolTable: make(map[uint64]datatype.DataType),
 		debug:       debug,
 	}
 
@@ -31,8 +32,8 @@ func New(bytecode []byte, memorySize int, debug bool) *Machine {
 
 	m.memory = append(m.memory, make([]byte, memorySize-len(m.memory))...)
 
-	m.setRegister(utils.RegisterToIndex("sp"), uint32(len(m.memory)))
-	m.setRegister(utils.RegisterToIndex("fp"), uint32(len(m.memory)))
+	m.setRegister(utils.RegisterToIndex("sp"), uint64(len(m.memory)))
+	m.setRegister(utils.RegisterToIndex("fp"), uint64(len(m.memory)))
 
 	return m
 }
@@ -98,6 +99,7 @@ func (m *Machine) Run() {
 }
 
 func (m *Machine) decodeNumber(dataType string, index int) int {
+	dataType = strings.ToLower(dataType)
 	switch dataType {
 	case "u8":
 		return int(m.memory[index])
@@ -107,6 +109,9 @@ func (m *Machine) decodeNumber(dataType string, index int) int {
 	case "u32":
 		bytes := m.memory[index : index+4]
 		return int(binary.BigEndian.Uint32(bytes))
+	case "u64":
+		bytes := m.memory[index : index+8]
+		return int(binary.BigEndian.Uint64(bytes))
 	default:
 		log.Fatal("unknown data type", "type", dataType)
 	}
@@ -131,8 +136,8 @@ func (m *Machine) decodeValue() ast.Value {
 		return &ast.Register{Value: reg}
 	case 0, 1, 3, 4, 5:
 		pos := m.position()
-		num := m.decodeNumber("u32", pos)
-		m.incRegister(utils.RegisterToIndex("ip"), 4)
+		num := m.decodeNumber("u64", pos)
+		m.incRegister(utils.RegisterToIndex("ip"), 8)
 		return &ast.NumberLiteral{Value: strconv.Itoa(num)}
 	default:
 		log.Fatal("unknown value index", "index", indexValue)
@@ -141,24 +146,24 @@ func (m *Machine) decodeValue() ast.Value {
 }
 
 func (m *Machine) parserHeaderStart() {
-	start := m.readLiteral()
-	m.memory = m.memory[4:]
-	m.setRegister(utils.RegisterToIndex("ip"), uint32(start))
+	start := m.readLiteral(datatype.U64)
+	m.memory = m.memory[8:]
+	m.setRegister(utils.RegisterToIndex("ip"), uint64(start))
 }
 
 func (m *Machine) parseHeaderSymbolTable() {
-	start := binary.BigEndian.Uint32(m.memory[:4]) - 4
-	end := binary.BigEndian.Uint32(m.memory[4:8]) - 4
+	start := binary.BigEndian.Uint64(m.memory[:8]) - 8
+	end := binary.BigEndian.Uint64(m.memory[8:16]) - 8
 
 	keyValues := m.memory[start:end]
 
-	for i := 0; i < len(keyValues); i += 8 {
-		if i+7 >= len(keyValues) {
-			log.Fatal("symbol table is not multiple of 8", "length", len(keyValues))
+	for i := 0; i < len(keyValues); i += 9 {
+		if i+8 >= len(keyValues) {
+			log.Fatal("symbol table is not multiple of 9", "length", len(keyValues))
 		}
 
-		key := binary.BigEndian.Uint32(keyValues[i : i+4])
-		value := binary.BigEndian.Uint32(keyValues[i+4 : i+8])
+		key := binary.BigEndian.Uint64(keyValues[i : i+8])
+		value := keyValues[i+8]
 
 		m.symbolTable[key] = datatype.DataType(value)
 	}
@@ -171,16 +176,16 @@ func (m *Machine) position() int {
 	return int(m.getRegister(index))
 }
 
-func (m *Machine) setRegister(index int, value uint32) {
+func (m *Machine) setRegister(index int, value uint64) {
 	m.registers[index] = value
 }
 
-func (m *Machine) getRegister(index int) uint32 {
+func (m *Machine) getRegister(index int) uint64 {
 	return m.registers[index]
 }
 
-func (m *Machine) incRegister(index int, amount int) {
-	m.registers[index] += uint32(amount)
+func (m *Machine) incRegister(index int, amount uint64) {
+	m.registers[index] += amount
 }
 
 func (m *Machine) readRegister() int {
@@ -190,35 +195,35 @@ func (m *Machine) readRegister() int {
 	return reg
 }
 
-func (m *Machine) readLiteral() uint32 {
+func (m *Machine) readLiteral(dataType datatype.DataType) uint64 {
 	pos := m.position()
-	lit := m.decodeNumber("u32", pos)
-	m.incRegister(utils.RegisterToIndex("ip"), 4)
-	return uint32(lit)
+	lit := m.decodeNumber(dataType.String(), pos)
+	m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+	return uint64(lit)
 }
 
-func (m *Machine) stackPush(v uint32) {
+func (m *Machine) stackPush(v uint64) {
 	spIndex := utils.RegisterToIndex("sp")
 	spValue := m.getRegister(spIndex)
 
-	byteArray := utils.Bytes4(v)
+	byteArray := utils.Bytes8(v)
 
-	memIndex := int(spValue) - 4
+	memIndex := int(spValue) - 8
 
-	copy(m.memory[memIndex:memIndex+4], byteArray)
+	copy(m.memory[memIndex:memIndex+8], byteArray)
 
-	m.setRegister(spIndex, spValue-4)
+	m.setRegister(spIndex, spValue-8)
 }
 
-func (m *Machine) stackPop() uint32 {
+func (m *Machine) stackPop() uint64 {
 	spIndex := utils.RegisterToIndex("sp")
 	spValue := m.getRegister(spIndex)
 
 	memIndex := int(spValue)
 
-	value := binary.BigEndian.Uint32(m.memory[memIndex : memIndex+4])
+	value := binary.BigEndian.Uint64(m.memory[memIndex : memIndex+8])
 
-	m.setRegister(spIndex, spValue+4)
+	m.setRegister(spIndex, spValue+8)
 
 	return value
 }
@@ -226,7 +231,7 @@ func (m *Machine) stackPop() uint32 {
 func (m *Machine) DumpRegisters() {
 	for i, register := range m.registers {
 		name := utils.IndexToRegister(i)
-		fmt.Printf("%-3s: 0x%08X\n", name, register)
+		fmt.Printf("%-3s: 0x%016X\n", name, register)
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 type Symbol struct {
 	name     string
 	dataType datatype.DataType
-	addr     int
+	addr     uint64
 	section  Section
 }
 
@@ -31,11 +31,11 @@ func (s *SymbolTable) Get(name string) *Symbol {
 	return s.symbols[name]
 }
 
-func (s *SymbolTable) Compile(name string, addr int) []byte {
+func (s *SymbolTable) Compile(name string, addr uint64) []byte {
 	bytecode := []byte{}
 	if symbol := s.Get(name); symbol != nil {
-		bytecode = append(bytecode, utils.Bytes4(uint32(addr))...)
-		bytecode = append(bytecode, utils.Bytes4(uint32(symbol.dataType))...)
+		bytecode = append(bytecode, utils.Bytes8(addr)...)
+		bytecode = append(bytecode, byte(symbol.dataType))
 	} else {
 		log.Warn("tried to compile label that does not exist", "label", name)
 	}

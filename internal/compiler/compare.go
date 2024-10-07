@@ -32,11 +32,11 @@ func getCompareBytecode(arg0, arg1 ast.Value) ([]byte, error) {
 	case *ast.Register:
 		switch a1 := arg1.(type) {
 		case *ast.NumberLiteral:
-			num, err := strconv.ParseInt(a1.Value, 10, 64)
+			num, err := strconv.ParseUint(a1.Value, 10, 64)
 			if err != nil {
 				return nil, err
 			}
-			return buildBytecode(opcode.CMP_REG_LIT, byte(a0.Value), utils.Bytes4(uint32(num)))
+			return buildBytecode(opcode.CMP_REG_LIT, byte(a0.Value), utils.Bytes8(num))
 		case *ast.Register:
 			return buildBytecode(opcode.CMP_REG_REG, byte(a0.Value), byte(a1.Value))
 		default:

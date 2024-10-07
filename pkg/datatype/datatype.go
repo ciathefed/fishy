@@ -1,6 +1,8 @@
 package datatype
 
-import "fmt"
+import (
+	"log"
+)
 
 type DataType int
 
@@ -8,7 +10,7 @@ const (
 	U8 DataType = iota
 	U16
 	U32
-	// U64
+	U64
 	// I8
 	// I16
 	// I32
@@ -26,8 +28,8 @@ func (d DataType) String() string {
 		return "U16"
 	case U32:
 		return "U32"
-	// case U64:
-	// 	return "U64"
+	case U64:
+		return "U64"
 	// case I8:
 	// 	return "I8"
 	// case I16:
@@ -43,6 +45,37 @@ func (d DataType) String() string {
 	case UNKNOWN:
 		return "UNKNOWN"
 	default:
-		return fmt.Sprintf("INVALID: %d", int(d))
+		log.Fatal("invalid data type", "type", int(d))
+		return ""
+	}
+}
+
+func (d DataType) Size() int {
+	switch d {
+	case U8:
+		return 1
+	case U16:
+		return 2
+	case U32:
+		return 4
+	case U64:
+		return 8
+	// case I8:
+	// 	return 1
+	// case I16:
+	// 	return 2
+	// case I32:
+	// 	return 4
+	// case I64:
+	// 	return 8
+	// case F32:
+	// 	return 4
+	// case F64:
+	// 	return 8
+	case UNKNOWN:
+		return 1
+	default:
+		log.Fatal("invalid data type", "type", int(d))
+		return -1
 	}
 }

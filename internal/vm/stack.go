@@ -16,9 +16,9 @@ func (m *Machine) handlePush(op opcode.Opcode) {
 		m.stackPush(m.getRegister(reg))
 	case opcode.PUSH_LIT:
 		pos := m.position()
-		lit := m.decodeNumber("u32", pos)
-		m.incRegister(utils.RegisterToIndex("ip"), 4)
-		m.stackPush(uint32(lit))
+		lit := m.decodeNumber("u64", pos)
+		m.incRegister(utils.RegisterToIndex("ip"), 8)
+		m.stackPush(uint64(lit))
 	}
 }
 

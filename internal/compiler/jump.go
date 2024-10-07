@@ -34,9 +34,9 @@ func (c *Compiler) compileJump(instruction *ast.Instruction) error {
 
 func (c *Compiler) compileJumpLit(op opcode.Opcode, number *ast.NumberLiteral) error {
 	section := c.currentSectionBytecode()
-	num, _ := strconv.ParseInt(number.Value, 10, 32)
+	num, _ := strconv.ParseUint(number.Value, 10, 64)
 	*section = append(*section, utils.Bytes2(uint16(op))...)
-	*section = append(*section, utils.Bytes4(uint32(num))...)
+	*section = append(*section, utils.Bytes8(num)...)
 	return nil
 }
 
@@ -55,7 +55,7 @@ func (c *Compiler) compileJumpAdr(op opcode.Opcode, identifier *ast.Identifier) 
 		section: c.currentSection,
 		label:   identifier.Value,
 	})
-	*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF}...)
+	*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
 	return nil
 }
 
