@@ -19,7 +19,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "fishy",
-	Short: "Fishy is a CLI tool used for the Fishy echo system",
+	Short: "Fishy is a CLI tool used for the Fishy ecosystem",
 }
 
 func Execute() {
