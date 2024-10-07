@@ -1,6 +1,10 @@
+;
+; This example will output the message to STDOUT
+;
+
 .section data
 message:
-    db "Hello, World!\n", 0
+    db "Hello, World!\n", $0x00
 
 .section text
 _start:

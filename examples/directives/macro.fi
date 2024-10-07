@@ -1,0 +1,23 @@
+;
+; This example shows you how to use macros
+;
+
+#macro write fd buffer len
+    mov x15, $4
+    mov x2, len
+    mov x1, buffer
+    mov x0, fd
+    syscall
+#end
+
+.section data
+message1:
+    db "this is the first message\n", $0x00
+message2:
+    db "this is the second message\n", $0x00
+
+.section text
+_start:
+    write $1, message1, $26
+    write $1, message2, $27
+    hlt

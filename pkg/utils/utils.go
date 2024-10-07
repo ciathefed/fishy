@@ -17,7 +17,7 @@ var Instructions = []string{
 }
 
 var Sequences = []string{
-	"db",
+	"db", "resb",
 }
 
 var Registers = []string{

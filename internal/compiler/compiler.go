@@ -13,6 +13,7 @@ type Section int
 const (
 	SectionText Section = iota
 	SectionData
+	SectionBSS
 )
 
 type Label struct {
@@ -31,6 +32,7 @@ type Compiler struct {
 	header         []byte
 	text           []byte
 	data           []byte
+	bss            []byte
 	labels         map[string]Label
 	fixups         []Fixup
 	currentSection Section
@@ -42,6 +44,7 @@ func New(statements []ast.Statement) *Compiler {
 		header:         make([]byte, 4),
 		text:           make([]byte, 0),
 		data:           make([]byte, 0),
+		bss:            make([]byte, 0),
 		labels:         make(map[string]Label),
 		fixups:         make([]Fixup, 0),
 		currentSection: SectionText,
@@ -75,6 +78,7 @@ func (c *Compiler) Compile() ([]byte, error) {
 
 	bytecode := append(c.header, c.text...)
 	bytecode = append(bytecode, c.data...)
+	bytecode = append(bytecode, c.bss...)
 	return bytecode, nil
 }
 
@@ -150,11 +154,27 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 				num, _ := strconv.ParseInt(v.Value, 10, 8)
 				bytecode = append(bytecode, byte(num))
 			default:
-				return fmt.Errorf("mov expected argument #%d to be STRING or NUMBER got %s", i, v.String())
+				return fmt.Errorf("%s expected argument #%d to be STRING or NUMBER got %s", sequence.Name, i, v.String())
 			}
 		}
 
 		*section = append(*section, bytecode...)
+	case "resb":
+		section := c.currentSectionBytecode()
+		amount := 0
+
+		for i, value := range sequence.Values {
+			switch v := value.(type) {
+			case *ast.NumberLiteral:
+				num, _ := strconv.ParseInt(v.Value, 10, 64)
+				amount += int(num)
+			default:
+				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
+			}
+		}
+
+		*section = append(*section, make([]byte, amount)...)
+
 	default:
 		return fmt.Errorf("unknown sequence: %s", sequence.Name)
 	}
@@ -167,6 +187,8 @@ func (c *Compiler) changeSection(section string) {
 		c.currentSection = SectionText
 	case "data":
 		c.currentSection = SectionData
+	case "bss":
+		c.currentSection = SectionBSS
 	default:
 		panic(fmt.Sprintf("unknown section: %s", section))
 	}
@@ -221,16 +243,25 @@ func (c *Compiler) writeHeader() {
 func (c *Compiler) getAddrOffset(addr int, section Section) int {
 	if section == SectionText {
 		return addr
-	} else {
+	} else if section == SectionData {
 		textSectionSize := len(c.text)
 		return textSectionSize + addr
+	} else {
+		textSectionSize := len(c.text)
+		dataSectionSize := len(c.data)
+		return textSectionSize + dataSectionSize + addr
 	}
 }
 
 func (c *Compiler) currentSectionBytecode() *[]byte {
-	if c.currentSection == SectionText {
+	switch c.currentSection {
+	case SectionText:
 		return &c.text
-	} else {
+	case SectionData:
 		return &c.data
+	case SectionBSS:
+		return &c.bss
+	default:
+		panic("unknown current section")
 	}
 }

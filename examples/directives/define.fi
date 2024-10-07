@@ -1,0 +1,12 @@
+;
+; This example shows you how to use define
+;
+
+#define TEN    10
+#define TWENTY 20
+
+.section text
+_start:
+    mov x0, TEN
+    add x0, TWENTY
+    hlt

@@ -1,10 +1,12 @@
-.section text
-_start:
-    mov x5, $47  ; nth
+;
+; This example will compute the nth fibonacci number
+; and store the result it in register x0
+;
 
-    mov x0, $0   ; return value
+fib:
+    mov x3, x0
+    mov x0, $0 ; return value
     mov x1, $1
-    mov x3, x5
 
 .loop:
     add x0, x1
@@ -17,4 +19,9 @@ _start:
     cmp x3, $0
     jne .loop
 
+    ret
+
+_start:
+    mov x0, $47  ; compute 47th fibonacci number
+    call fib
     hlt

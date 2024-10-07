@@ -80,6 +80,9 @@ func (p *Parser) parseInstruction() (ast.Statement, error) {
 		if err != nil {
 			return nil, err
 		}
+		if arg == nil {
+			break
+		}
 		args = append(args, arg)
 
 		if p.currentToken.Kind != token.COMMA {
@@ -141,13 +144,15 @@ func (p *Parser) parseArgument() (ast.Value, error) {
 		}
 		p.nextToken()
 		return &ast.AddressOf{Value: address}, nil
+	case token.COMMENT:
+		p.nextToken()
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("unexpected token in argument: %v", p.currentToken)
 	}
 }
 
 func (p *Parser) parseExpression() (ast.Value, error) {
-
 	leftExpr, err := p.parseTerm()
 	if err != nil {
 		return nil, err

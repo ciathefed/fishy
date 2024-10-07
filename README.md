@@ -1,12 +1,15 @@
 # Fishy
 
-Welcome to the Fishy CLI Tool! This application consists of a compiler and virtual machine for **FishyASM** and **Fishy Bytecode**, designed to streamline the development process within the Fishy ecosystem. Fishy is a toy and **should not** be used in production.
+Welcome to the Fishy CLI Tool! This application consists of a compiler and virtual machine for **FishyASM** and **Fishy Bytecode**, designed to streamline the development process within the Fishy ecosystem.
+
+⚠️ Fishy is just for fun and **SHOULD NOT** be used in production! ⚠️
 
 ## Table of Contents
 
 - [Fishy](#fishy)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
+  - [Notes](#notes)
   - [Installation](#installation)
   - [Usage](#usage)
   - [Examples](#examples)
@@ -18,7 +21,14 @@ Welcome to the Fishy CLI Tool! This application consists of a compiler and virtu
 
 - **Compiler**: Convert FishyASM source code into Fishy Bytecode for execution on the virtual machine.
 - **Virtual Machine**: Execute Fishy Bytecode with support for standard library functions and custom scripts.
+- **Standard Library**: The standard library can be found [here](https://github.com/ciathefed/fishy/tree/main/stdlib), provides some macros, definitions, and functions to make your life easier.
 - **Cross-Platform**: Works on Windows, macOS, and Linux.
+
+## Notes
+
+1. The pre-processor was poorly made and until it is re-done, expect issues.
+2. The virtual machine currently only supports `uint32`.
+3. The sections `text`, `data`, and `bss` only tell the compiler where to put the bytecode (in that order), so `bss` occupies physical space in the final bytecode. This isn't saying you shouldn't use them as you would in other assembly languages, just keep in mind something like `resp 32` will add 32 bytes in the final bytecode.
 
 ## Installation
 

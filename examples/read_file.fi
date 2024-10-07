@@ -1,0 +1,31 @@
+;
+; In this example you will see really what this has to offer,
+; there will be macros, definitions, syscall, and different sections.
+;
+; Instructions like open, read, close, and write are actually macros
+; from the standard library.
+;
+
+#include "stdlib/io.fi"
+#include "stdlib/os.fi"
+
+.section data
+path:
+    db "test.txt", 0
+
+.section bss
+contents:
+    resb 32
+
+.section text
+_start:
+    open path, $8, $0, $0
+    mov x5, x0
+    read x5, contents, $32
+    mov x6, x0
+    close x5
+
+    write STDOUT, contents, x6
+
+    hlt
+    
