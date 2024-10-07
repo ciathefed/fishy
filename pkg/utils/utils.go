@@ -10,6 +10,7 @@ var Instructions = []string{
 
 	"mov",
 	"add", "sub", "mul", "div",
+	"and", "or", "xor", "shl", "shr",
 	"cmp",
 	"jmp", "jeq", "jne", "jlt", "jgt", "jle", "jge", "jz",
 	"push", "pop",

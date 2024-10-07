@@ -77,7 +77,6 @@ func (c *Compiler) Compile() ([]byte, error) {
 				return nil, err
 			}
 		}
-
 	}
 
 	c.resolveFixups()
@@ -145,6 +144,8 @@ func (c *Compiler) compileInstruction(instruction *ast.Instruction) error {
 		return c.compileMov(instruction)
 	case "add", "sub", "mul", "div":
 		return c.compileArithmetic(instruction)
+	case "and", "or", "xor", "shl", "shr":
+		return c.compileBitwise(instruction)
 	case "cmp":
 		return c.compileCompare(instruction)
 	case "jmp", "jeq", "jne", "jlt", "jgt", "jle", "jge", "jz":

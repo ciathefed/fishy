@@ -9,19 +9,19 @@ import (
 	"strconv"
 )
 
-func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
+func (c *Compiler) compileBitwise(instruction *ast.Instruction) error {
 	section := c.currentSectionBytecode()
 
 	if len(instruction.Args) != 2 {
 		return fmt.Errorf("%s expected 2 arguments", instruction.Name)
 	}
 
-	bytecode, kind, err := getArithmeticArgsBytecode(instruction.DataType, instruction.Args[0], instruction.Args[1])
+	bytecode, kind, err := getBitwiseArgsBytecode(instruction.DataType, instruction.Args[0], instruction.Args[1])
 	if err != nil {
 		return err
 	}
 
-	op, err := getArithmeticOpcode(instruction.Name, kind)
+	op, err := getBitwiseOpcode(instruction.Name, kind)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
 	return nil
 }
 
-func getArithmeticArgsBytecode(dataType datatype.DataType, arg0, arg1 interface{}) ([]byte, string, error) {
+func getBitwiseArgsBytecode(dataType datatype.DataType, arg0, arg1 interface{}) ([]byte, string, error) {
 	bytecode := []byte{}
 	kind := "REG_LIT"
 
@@ -61,17 +61,18 @@ func getArithmeticArgsBytecode(dataType datatype.DataType, arg0, arg1 interface{
 	return bytecode, kind, nil
 }
 
-func getArithmeticOpcode(name, kind string) (opcode.Opcode, error) {
+func getBitwiseOpcode(name, kind string) (opcode.Opcode, error) {
 	opcodes := map[string]map[string]opcode.Opcode{
-		"add": {"REG_LIT": opcode.ADD_REG_LIT, "REG_REG": opcode.ADD_REG_REG},
-		"sub": {"REG_LIT": opcode.SUB_REG_LIT, "REG_REG": opcode.SUB_REG_REG},
-		"mul": {"REG_LIT": opcode.MUL_REG_LIT, "REG_REG": opcode.MUL_REG_REG},
-		"div": {"REG_LIT": opcode.DIV_REG_LIT, "REG_REG": opcode.DIV_REG_REG},
+		"and": {"REG_LIT": opcode.AND_REG_LIT, "REG_REG": opcode.AND_REG_REG},
+		"or":  {"REG_LIT": opcode.OR_REG_LIT, "REG_REG": opcode.OR_REG_REG},
+		"xor": {"REG_LIT": opcode.XOR_REG_LIT, "REG_REG": opcode.XOR_REG_REG},
+		"shl": {"REG_LIT": opcode.SHL_REG_LIT, "REG_REG": opcode.SHL_REG_REG},
+		"shr": {"REG_LIT": opcode.SHR_REG_LIT, "REG_REG": opcode.SHR_REG_REG},
 	}
 
 	ops, found := opcodes[name]
 	if !found {
-		return 0, fmt.Errorf("unknown arithmetic instruction %s", name)
+		return 0, fmt.Errorf("unknown bitwise instruction %s", name)
 	}
 
 	op, found := ops[kind]

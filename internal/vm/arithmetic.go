@@ -9,29 +9,33 @@ import (
 func (m *Machine) handleArithmetic(op opcode.Opcode) {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
+	pos := m.position()
+	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	m.incRegister(utils.RegisterToIndex("ip"), 1)
+
 	switch op {
 	case opcode.ADD_REG_LIT:
-		m.applyRegLitArithmetic(func(reg, lit uint64) uint64 { return reg + lit })
+		m.applyRegLitArithmetic(rdt, func(reg, lit uint64) uint64 { return reg + lit })
 	case opcode.ADD_REG_REG:
 		m.applyRegRegArithmetic(func(reg0, reg1 uint64) uint64 { return reg0 + reg1 })
 	case opcode.SUB_REG_LIT:
-		m.applyRegLitArithmetic(func(reg, lit uint64) uint64 { return reg - lit })
+		m.applyRegLitArithmetic(rdt, func(reg, lit uint64) uint64 { return reg - lit })
 	case opcode.SUB_REG_REG:
 		m.applyRegRegArithmetic(func(reg0, reg1 uint64) uint64 { return reg0 - reg1 })
 	case opcode.MUL_REG_LIT:
-		m.applyRegLitArithmetic(func(reg, lit uint64) uint64 { return reg * lit })
+		m.applyRegLitArithmetic(rdt, func(reg, lit uint64) uint64 { return reg * lit })
 	case opcode.MUL_REG_REG:
 		m.applyRegRegArithmetic(func(reg0, reg1 uint64) uint64 { return reg0 * reg1 })
 	case opcode.DIV_REG_LIT:
-		m.applyRegLitArithmetic(func(reg, lit uint64) uint64 { return reg / lit })
+		m.applyRegLitArithmetic(rdt, func(reg, lit uint64) uint64 { return reg / lit })
 	case opcode.DIV_REG_REG:
 		m.applyRegRegArithmetic(func(reg0, reg1 uint64) uint64 { return reg0 / reg1 })
 	}
 }
 
-func (m *Machine) applyRegLitArithmetic(operation func(uint64, uint64) uint64) {
+func (m *Machine) applyRegLitArithmetic(dataType datatype.DataType, operation func(uint64, uint64) uint64) {
 	reg := m.readRegister()
-	lit := m.readLiteral(datatype.U64)
+	lit := m.readLiteral(dataType)
 	temp := m.getRegister(reg)
 	m.setRegister(reg, operation(temp, lit))
 }

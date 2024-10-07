@@ -74,6 +74,17 @@ func (m *Machine) Run() {
 			opcode.MUL_REG_LIT, opcode.MUL_REG_REG,
 			opcode.DIV_REG_LIT, opcode.DIV_REG_REG:
 			m.handleArithmetic(op)
+		case opcode.AND_REG_LIT,
+			opcode.AND_REG_REG,
+			opcode.OR_REG_LIT,
+			opcode.OR_REG_REG,
+			opcode.XOR_REG_LIT,
+			opcode.XOR_REG_REG,
+			opcode.SHL_REG_LIT,
+			opcode.SHL_REG_REG,
+			opcode.SHR_REG_LIT,
+			opcode.SHR_REG_REG:
+			m.handleBitwise(op)
 		case opcode.CMP_REG_LIT, opcode.CMP_REG_REG:
 			m.handleCompare(op)
 		case opcode.JMP_LIT, opcode.JMP_REG,

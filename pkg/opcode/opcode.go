@@ -26,6 +26,17 @@ const (
 	DIV_REG_LIT
 	DIV_REG_REG
 
+	AND_REG_LIT
+	AND_REG_REG
+	OR_REG_LIT
+	OR_REG_REG
+	XOR_REG_LIT
+	XOR_REG_REG
+	SHL_REG_LIT
+	SHL_REG_REG
+	SHR_REG_LIT
+	SHR_REG_REG
+
 	CMP_REG_LIT
 	CMP_REG_REG
 
@@ -90,6 +101,26 @@ func (o Opcode) String() string {
 		return "DIV_REG_LIT"
 	case DIV_REG_REG:
 		return "DIV_REG_REG"
+	case AND_REG_LIT:
+		return "AND_REG_LIT"
+	case AND_REG_REG:
+		return "AND_REG_REG"
+	case OR_REG_LIT:
+		return "OR_REG_LIT"
+	case OR_REG_REG:
+		return "OR_REG_REG"
+	case XOR_REG_LIT:
+		return "XOR_REG_LIT"
+	case XOR_REG_REG:
+		return "XOR_REG_REG"
+	case SHL_REG_LIT:
+		return "SHL_REG_LIT"
+	case SHL_REG_REG:
+		return "SHL_REG_REG"
+	case SHR_REG_LIT:
+		return "SHR_REG_LIT"
+	case SHR_REG_REG:
+		return "SHR_REG_REG"
 	case CMP_REG_LIT:
 		return "CMP_REG_LIT"
 	case CMP_REG_REG:
