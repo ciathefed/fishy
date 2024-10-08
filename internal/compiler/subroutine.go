@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"fishy/pkg/ast"
+	"fishy/pkg/datatype"
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
@@ -27,9 +28,10 @@ func (c *Compiler) compileCall(instruction *ast.Instruction) error {
 		opcode := utils.Bytes2(uint16(opcode.CALL_LIT))
 		*section = append(*section, opcode...)
 		c.fixups = append(c.fixups, Fixup{
-			addr:    len(*section),
-			section: c.currentSection,
-			label:   a.Value,
+			addr:     len(*section),
+			section:  c.currentSection,
+			label:    a.Value,
+			dataType: datatype.UNSET,
 		})
 		*section = append(*section, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}...)
 	default:

@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"fishy/pkg/ast"
+	"fishy/pkg/datatype"
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
@@ -51,11 +52,12 @@ func (c *Compiler) compileJumpAdr(op opcode.Opcode, identifier *ast.Identifier) 
 	section := c.currentSectionBytecode()
 	*section = append(*section, utils.Bytes2(uint16(op))...)
 	c.fixups = append(c.fixups, Fixup{
-		addr:    len(*section),
-		section: c.currentSection,
-		label:   identifier.Value,
+		addr:     len(*section),
+		section:  c.currentSection,
+		label:    identifier.Value,
+		dataType: datatype.UNSET,
 	})
-	*section = append(*section, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}...)
+	*section = append(*section, []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}...)
 	return nil
 }
 

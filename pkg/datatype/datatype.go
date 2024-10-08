@@ -1,6 +1,7 @@
 package datatype
 
 import (
+	"encoding/binary"
 	"fishy/pkg/utils"
 	"log"
 )
@@ -72,6 +73,24 @@ func (d DataType) MakeBytes(value uint64) []byte {
 	default:
 		log.Fatal("invalid data type", "type", int(d))
 		return nil
+	}
+}
+
+func (d DataType) ReadBytes(byteArray []byte, index int) uint64 {
+	switch d {
+	case U8:
+		return uint64(byteArray[index])
+	case U16:
+		return uint64(binary.BigEndian.Uint16(byteArray[index : index+d.Size()]))
+	case U32:
+		return uint64(binary.BigEndian.Uint32(byteArray[index : index+d.Size()]))
+	case U64:
+		return uint64(binary.BigEndian.Uint32(byteArray[index : index+d.Size()]))
+	case UNSET:
+		return uint64(binary.BigEndian.Uint32(byteArray[index : index+d.Size()]))
+	default:
+		log.Fatal("invalid data type", "type", int(d))
+		return 0
 	}
 }
 

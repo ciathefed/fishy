@@ -26,7 +26,7 @@ func (c *Compiler) compilePush(instruction *ast.Instruction) error {
 		num, _ := strconv.ParseUint(a.Value, 10, 64)
 		opcode := utils.Bytes2(uint16(opcode.PUSH_LIT))
 		*section = append(*section, opcode...)
-		*section = append(*section, utils.Bytes8(num)...)
+		*section = append(*section, utils.Bytes8(uint64(num))...)
 	default:
 		return fmt.Errorf("%s expected argument #1 to be REGISTER or NUMBER got %s", instruction.Name, a.String())
 	}

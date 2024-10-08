@@ -40,6 +40,7 @@ type Compiler struct {
 	fixups      []Fixup
 
 	currentSection Section
+	entry          string
 }
 
 func New(statements []ast.Statement) *Compiler {
@@ -54,6 +55,7 @@ func New(statements []ast.Statement) *Compiler {
 		symbolTable:       NewSymbolTable(),
 		fixups:            make([]Fixup, 0),
 		currentSection:    SectionText,
+		entry:             "_start",
 	}
 }
 
@@ -122,7 +124,19 @@ func (c *Compiler) compileInstruction(instruction *ast.Instruction) error {
 		if value := arg0.(*ast.Identifier); value != nil {
 			c.changeSection(value.Value)
 		} else {
-			return fmt.Errorf(".section expected %s got %s", "IDENTIFIER", arg0.String())
+			return fmt.Errorf(".section expected IDENTIFIER got %s", arg0.String())
+		}
+	case ".entry":
+		if len(instruction.Args) != 1 {
+			return fmt.Errorf(".entry expected 1 argument")
+		}
+
+		arg0 := instruction.Args[0]
+
+		if value := arg0.(*ast.Identifier); value != nil {
+			c.entry = value.Value
+		} else {
+			return fmt.Errorf(".entry expected IDENTIFIER got %s", arg0.String())
 		}
 	case "nop":
 		opcode := utils.Bytes2(uint16(opcode.NOP))
@@ -395,7 +409,7 @@ func (c *Compiler) resolveFixups() {
 }
 
 func (c *Compiler) writeHeaderStart() {
-	if symbol := c.symbolTable.Get("_start"); symbol != nil {
+	if symbol := c.symbolTable.Get(c.entry); symbol != nil {
 		addr := c.getAddrOffset(symbol.addr, symbol.section)
 		bytes := utils.Bytes8(addr)
 		copy(c.headerStart, bytes[:])

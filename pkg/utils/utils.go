@@ -2,12 +2,12 @@ package utils
 
 var Instructions = []string{
 	".section",
+	".entry",
 
 	"nop",
 	"hlt",
 	"brk",
 	"syscall",
-
 	"mov",
 	"add", "sub", "mul", "div",
 	"and", "or", "xor", "shl", "shr",
