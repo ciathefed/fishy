@@ -135,19 +135,10 @@ func stringValue(value ast.Value) string {
 		return v.Value
 	case *ast.AddressOf:
 		return fmt.Sprintf("[%s]", stringValue(v.Value))
-	case *ast.BinaryExpression:
-		op := "???"
-		switch v.Operator {
-		case token.PLUS:
-			op = "+"
-		case token.MINUS:
-			op = "-"
-		case token.STAR:
-			op = "*"
-		case token.SLASH:
-			op = "/"
-		}
-		return fmt.Sprintf("(%s %s %s)", stringValue(v.Left), op, stringValue(v.Right))
+	case *ast.RegisterOffset:
+		return fmt.Sprintf("%s %s %s", stringValue(&v.Left), v.Operator.String(), stringValue(&v.Right))
+	case *ast.LabelOffset:
+		return fmt.Sprintf("%s %s %s", stringValue(v.Left), v.Operator.String(), stringValue(&v.Right))
 	}
 
 	return fmt.Sprintf("%#v", value)

@@ -1,0 +1,38 @@
+;
+; In this example you can see the power of syscalls with
+; a simple tcp echo server
+;
+
+#include "../../stdlib/os.fi"
+#include "../../stdlib/net.fi"
+
+.section data
+socket_listen_opts:
+    db 0
+    db 127, 0, 0, 1
+    dw 8080
+
+.section bss
+fd:     resb 1
+conn:   resb 1
+input:  resb 64
+
+.section text
+_start:
+    mov x0, socket_listen_opts
+    mov x15, SYS_NET_LISTEN_TCP
+    syscall
+    mov [fd], x0
+
+    mov x0, [fd]
+    mov x15, SYS_NET_ACCEPT
+    syscall
+    mov [conn], x0
+    
+.loop:
+    read [conn], input, 64
+    write [conn], input, x0
+    jmp .loop
+
+    hlt
+    

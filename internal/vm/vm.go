@@ -145,11 +145,47 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 		reg := m.decodeRegister(pos)
 		m.incRegister(utils.RegisterToIndex("ip"), 1)
 		return &ast.Register{Value: reg}
-	case 0, 1, 3, 4, 5:
+	case 0, 1, 3, 4:
 		pos := m.position()
 		num := m.decodeNumber(dataType.String(), pos)
 		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 		return &ast.NumberLiteral{Value: strconv.Itoa(num)}
+	case 5:
+		pos := m.position()
+		reg := m.decodeRegister(pos)
+		m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+		pos = m.position()
+		op := ast.Operator(m.decodeNumber("u8", pos))
+		m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+		pos = m.position()
+		offset := m.decodeNumber(dataType.String(), pos)
+		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+
+		return &ast.RegisterOffset{
+			Left:     ast.Register{Value: reg},
+			Operator: op,
+			Right:    ast.NumberLiteral{Value: strconv.Itoa(offset)},
+		}
+	case 6:
+		pos := m.position()
+		addr := m.decodeNumber(dataType.String(), pos)
+		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+
+		pos = m.position()
+		op := ast.Operator(m.decodeNumber("u8", pos))
+		m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+		pos = m.position()
+		offset := m.decodeNumber(dataType.String(), pos)
+		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+
+		return &ast.LabelOffset{
+			Left:     &ast.NumberLiteral{Value: strconv.Itoa(addr)},
+			Operator: op,
+			Right:    ast.NumberLiteral{Value: strconv.Itoa(offset)},
+		}
 	default:
 		log.Fatal("unknown value index", "index", indexValue)
 	}

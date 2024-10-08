@@ -1,17 +1,18 @@
-#define SYS_EXIT  0x01
-#define SYS_OPEN  0x02
-#define SYS_READ  0x03
-#define SYS_WRITE 0x04
-#define SYS_CLOSE 0x05
+#define SYS_EXIT            0x01
+#define SYS_OPEN            0x02
+#define SYS_READ            0x03
+#define SYS_WRITE           0x04
+#define SYS_CLOSE           0x05
+
 
 #macro exit status
-    mov x15, SYS_EXIT
+    mov u8 x15, SYS_EXIT
     mov x0, status
     syscall
 #end
 
 #macro open addr len mode perms
-    mov x15, SYS_OPEN
+    mov u8 x15, SYS_OPEN
     mov x3, perms
     mov x2, mode
     mov x1, len
@@ -20,7 +21,7 @@
 #end
 
 #macro read fd buffer len
-    mov x15, SYS_READ
+    mov u8 x15, SYS_READ
     mov x2, len
     mov x1, buffer
     mov x0, fd
@@ -28,7 +29,7 @@
 #end
 
 #macro write fd buffer len
-    mov x15, SYS_WRITE
+    mov u8 x15, SYS_WRITE
     mov x2, len
     mov x1, buffer
     mov x0, fd
@@ -36,7 +37,7 @@
 #end
 
 #macro close fd
-    mov x15, SYS_CLOSE
+    mov u8 x15, SYS_CLOSE
     mov x0, fd
     syscall
 #end

@@ -26,8 +26,8 @@ type Fixup struct {
 }
 
 type Compiler struct {
-	statements []ast.Statement
-	lastLabel  ast.Statement
+	statements    []ast.Statement
+	lastStatement ast.Statement
 
 	headerStart       []byte
 	headerSymbolTable []byte
@@ -46,7 +46,7 @@ type Compiler struct {
 func New(statements []ast.Statement) *Compiler {
 	return &Compiler{
 		statements:        statements,
-		lastLabel:         nil,
+		lastStatement:     nil,
 		headerStart:       make([]byte, 8),
 		headerSymbolTable: make([]byte, 0),
 		text:              make([]byte, 0),
@@ -67,7 +67,6 @@ func (c *Compiler) Compile() ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			c.lastLabel = stmt
 		case *ast.Instruction:
 			err := c.compileInstruction(s)
 			if err != nil {
@@ -79,6 +78,7 @@ func (c *Compiler) Compile() ([]byte, error) {
 				return nil, err
 			}
 		}
+		c.lastStatement = stmt
 	}
 
 	c.resolveFixups()
@@ -105,9 +105,9 @@ func (c *Compiler) compileLabel(label *ast.Label) error {
 	addr := uint64(len(*c.currentSectionBytecode()))
 	c.symbolTable.Set(label.Name, &Symbol{
 		name:     label.Name,
-		dataType: datatype.UNSET,
 		addr:     addr,
 		section:  c.currentSection,
+		dataType: datatype.UNSET,
 	})
 	return nil
 }
@@ -332,7 +332,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 }
 
 func (c *Compiler) updateSymbolDataType(sequenceName string, newDataType datatype.DataType) {
-	if stmt, ok := c.lastLabel.(*ast.Label); ok {
+	if stmt, ok := c.lastStatement.(*ast.Label); ok {
 		if symbol := c.symbolTable.Get(stmt.Name); symbol != nil {
 			if symbol.dataType != datatype.UNSET && symbol.dataType != newDataType {
 				log.Warn("label data type being changed but was already set", "old", symbol.dataType, "new", newDataType, "setter", sequenceName, "label", symbol.name)

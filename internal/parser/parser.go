@@ -7,6 +7,7 @@ import (
 	"fishy/pkg/token"
 	"fishy/pkg/utils"
 	"fmt"
+	"log"
 )
 
 type Parser struct {
@@ -169,18 +170,43 @@ func (p *Parser) parseExpression() (ast.Value, error) {
 		return nil, err
 	}
 
-	for p.currentToken.Kind == token.PLUS || p.currentToken.Kind == token.MINUS {
-		operator := p.currentToken.Kind
+	var operator ast.Operator
+
+	if p.currentToken.Kind == token.PLUS || p.currentToken.Kind == token.MINUS || p.currentToken.Kind == token.STAR || p.currentToken.Kind == token.SLASH {
+		operator = ast.OperatorFromTokenKind(p.currentToken.Kind)
 		p.nextToken()
-		rightExpr, err := p.parseTerm()
-		if err != nil {
-			return nil, err
+	} else {
+		return leftExpr, nil
+	}
+
+	rightExpr, err := p.parseTerm()
+	if err != nil {
+		return nil, err
+	}
+
+	switch left := leftExpr.(type) {
+	case *ast.Identifier:
+		if right := rightExpr.(*ast.NumberLiteral); right != nil {
+			return &ast.LabelOffset{
+				Left:     left,
+				Operator: operator,
+				Right:    *right,
+			}, nil
+		} else {
+			log.Fatal("unknown expression", "left", left.String(), "op", operator.String(), "right", right.String())
 		}
-		leftExpr = &ast.BinaryExpression{
-			Left:     leftExpr,
-			Operator: operator,
-			Right:    rightExpr,
+	case *ast.Register:
+		if right := rightExpr.(*ast.NumberLiteral); right != nil {
+			return &ast.RegisterOffset{
+				Left:     *left,
+				Operator: operator,
+				Right:    *right,
+			}, nil
+		} else {
+			log.Fatal("unknown expression", "left", left.String(), "op", operator.String(), "right", right.String())
 		}
+	default:
+		log.Fatal("unknown expression", "left", leftExpr.String(), "op", operator.String(), "right", rightExpr.String())
 	}
 
 	return leftExpr, nil

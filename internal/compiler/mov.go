@@ -70,8 +70,26 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 					dataType: instruction.DataType,
 				})
 				*section = append(*section, instruction.DataType.MakeBytes(0)...)
+			case *ast.RegisterOffset:
+				num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+				*section = append(*section, byte(index))
+				*section = append(*section, byte(value.Left.Value))
+				*section = append(*section, byte(int(value.Operator)))
+				*section = append(*section, instruction.DataType.MakeBytes(num)...)
+			case *ast.LabelOffset:
+				num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+				*section = append(*section, byte(index))
+				c.fixups = append(c.fixups, Fixup{
+					addr:     len(*section),
+					section:  c.currentSection,
+					label:    value.Left.(*ast.Identifier).Value,
+					dataType: instruction.DataType,
+				})
+				*section = append(*section, instruction.DataType.MakeBytes(0)...)
+				*section = append(*section, byte(int(value.Operator)))
+				*section = append(*section, instruction.DataType.MakeBytes(num)...)
 			default:
-				return fmt.Errorf("mov expected argument #2 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
+				return fmt.Errorf("mov expected argument #2 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], ADDRESS_OF[IDENTIFIER], ADDRESS_OF[REGISTER_OFFSET], or ADDRESS_OF[LABEL_OFFSET] got ADDRESS_OF[%s]", value.String())
 			}
 		default:
 			return fmt.Errorf("mov expected argument #2 to be REGISTER, NUMBER, IDENTIFIER, or ADDRESS_OF got %s", arg1.String())
@@ -113,8 +131,26 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 				dataType: instruction.DataType,
 			})
 			*section = append(*section, instruction.DataType.MakeBytes(0)...)
+		case *ast.RegisterOffset:
+			num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+			*section = append(*section, byte(index))
+			*section = append(*section, byte(value.Left.Value))
+			*section = append(*section, byte(int(value.Operator)))
+			*section = append(*section, instruction.DataType.MakeBytes(num)...)
+		case *ast.LabelOffset:
+			num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+			*section = append(*section, byte(index))
+			c.fixups = append(c.fixups, Fixup{
+				addr:     len(*section),
+				section:  c.currentSection,
+				label:    value.Left.(*ast.Identifier).Value,
+				dataType: instruction.DataType,
+			})
+			*section = append(*section, instruction.DataType.MakeBytes(0)...)
+			*section = append(*section, byte(int(value.Operator)))
+			*section = append(*section, instruction.DataType.MakeBytes(num)...)
 		default:
-			return fmt.Errorf("mov expected argument #1 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], or ADDRESS_OF[IDENTIFIER] got ADDRESS_OF[%s]", value.String())
+			return fmt.Errorf("mov expected argument #1 to be ADDRESS_OF[REGISTER], ADDRESS_OF[NUMBER], ADDRESS_OF[IDENTIFIER], ADDRESS_OF[REGISTER_OFFSET], or ADDRESS_OF[LABEL_OFFSET] got ADDRESS_OF[%s]", value.String())
 		}
 
 		*section = append(*section, bytecode...)

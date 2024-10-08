@@ -86,15 +86,29 @@ func (m *Machine) handleMovRegAof() {
 	case *ast.Register:
 		num := m.getRegister(v.Value)
 		addr += int(num)
+	case *ast.RegisterOffset:
+		num := m.getRegister(v.Left.Value)
+		addr += int(num)
+	case *ast.LabelOffset:
+		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
+		addr += int(num)
 	default:
 		log.Fatal("unknown value to get address of", "value", value)
 	}
 
 	dt := datatype.DataType(datatype.UNSET)
+	if adt, ok := m.symbolTable[uint64(addr)]; ok {
+		dt = adt
+	}
 	if rdt != datatype.UNSET {
 		dt = rdt
-	} else if adt, ok := m.symbolTable[uint64(addr)]; ok {
-		dt = adt
+	}
+
+	switch v := value.(type) {
+	case *ast.RegisterOffset:
+		addr = applyOffset(addr, v.Operator, v.Right.Value)
+	case *ast.LabelOffset:
+		addr = applyOffset(addr, v.Operator, v.Right.Value)
 	}
 
 	switch dt {
@@ -128,6 +142,12 @@ func (m *Machine) handleMovAofReg() {
 	case *ast.Register:
 		num := m.getRegister(v.Value)
 		addr += int(num)
+	case *ast.RegisterOffset:
+		num := m.getRegister(v.Left.Value)
+		addr += int(num)
+	case *ast.LabelOffset:
+		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
+		addr += int(num)
 	default:
 		log.Fatal("unknown value to get address of", "value", value)
 	}
@@ -137,10 +157,18 @@ func (m *Machine) handleMovAofReg() {
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	dt := datatype.DataType(datatype.UNSET)
+	if adt, ok := m.symbolTable[uint64(addr)]; ok {
+		dt = adt
+	}
 	if rdt != datatype.UNSET {
 		dt = rdt
-	} else if adt, ok := m.symbolTable[uint64(addr)]; ok {
-		dt = adt
+	}
+
+	switch v := value.(type) {
+	case *ast.RegisterOffset:
+		addr = applyOffset(addr, v.Operator, v.Right.Value)
+	case *ast.LabelOffset:
+		addr = applyOffset(addr, v.Operator, v.Right.Value)
 	}
 
 	switch dt {
@@ -174,6 +202,12 @@ func (m *Machine) handleMovAofLit() {
 	case *ast.Register:
 		num := m.getRegister(v.Value)
 		addr += int(num)
+	case *ast.RegisterOffset:
+		num := m.getRegister(v.Left.Value)
+		addr += int(num)
+	case *ast.LabelOffset:
+		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
+		addr += int(num)
 	default:
 		log.Fatal("unknown value to get address of", "value", value)
 	}
@@ -183,10 +217,18 @@ func (m *Machine) handleMovAofLit() {
 	m.incRegister(utils.RegisterToIndex("ip"), uint64(rdt.Size()))
 
 	dt := datatype.DataType(datatype.UNSET)
+	if adt, ok := m.symbolTable[uint64(addr)]; ok {
+		dt = adt
+	}
 	if rdt != datatype.UNSET {
 		dt = rdt
-	} else if adt, ok := m.symbolTable[uint64(addr)]; ok {
-		dt = adt
+	}
+
+	switch v := value.(type) {
+	case *ast.RegisterOffset:
+		addr = applyOffset(addr, v.Operator, v.Right.Value)
+	case *ast.LabelOffset:
+		addr = applyOffset(addr, v.Operator, v.Right.Value)
 	}
 
 	switch dt {
@@ -201,5 +243,21 @@ func (m *Machine) handleMovAofLit() {
 	case datatype.U64, datatype.UNSET:
 		bytes := utils.Bytes8(uint64(lit))
 		copy(m.memory[addr:addr+8], bytes[:])
+	}
+}
+
+func applyOffset(addr int, operator ast.Operator, value string) int {
+	num, _ := strconv.ParseUint(value, 10, 64)
+	switch operator {
+	case ast.ADD:
+		return addr + int(num)
+	case ast.SUBTRACT:
+		return addr - int(num)
+	case ast.MULTIPLY:
+		return addr * int(num)
+	case ast.DIVIDE:
+		return addr / int(num)
+	default:
+		return addr
 	}
 }

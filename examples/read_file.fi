@@ -6,8 +6,8 @@
 ; from the standard library.
 ;
 
-#include "stdlib/io.fi"
-#include "stdlib/os.fi"
+#include "../stdlib/io.fi"
+#include "../stdlib/os.fi"
 
 .section data
 path:

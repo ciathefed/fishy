@@ -1,0 +1,31 @@
+;
+; This examples shows how to connect to an tcp server
+; and send a message
+;
+
+#include "stdlib/os.fi"
+#include "stdlib/net.fi"
+
+.section data
+socket_connect_opts:
+    db 0
+    db 127, 0, 0, 1
+    dw 8080
+
+message:
+    db "Hello, World!\n", 0
+
+.section bss
+conn:   resb 1
+
+.section text
+_start:
+    mov x0, socket_connect_opts
+    mov x15, SYS_NET_CONNECT_TCP
+    syscall
+    mov [conn], x0
+
+    write [conn], message, 14
+
+    hlt
+    
