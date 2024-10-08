@@ -57,7 +57,9 @@ const (
 
 	PUSH_LIT
 	PUSH_REG
+	PUSH_AOF
 	POP_REG
+	POP_AOF
 
 	CALL_LIT
 	RET
@@ -157,8 +159,12 @@ func (o Opcode) String() string {
 		return "PUSH_LIT"
 	case PUSH_REG:
 		return "PUSH_REG"
+	case PUSH_AOF:
+		return "PUSH_AOF"
 	case POP_REG:
 		return "POP_REG"
+	case POP_AOF:
+		return "POP_AOF"
 	case CALL_LIT:
 		return "CALL_LIT"
 	case RET:

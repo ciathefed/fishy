@@ -196,13 +196,13 @@ func (m *Machine) handleMovAofReg() {
 		m.memory[addr] = byte(m.getRegister(reg))
 	case datatype.U16:
 		bytes := utils.Bytes2(uint16(m.getRegister(reg)))
-		copy(m.memory[addr:addr+2], bytes[:])
+		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	case datatype.U32:
 		bytes := utils.Bytes4(uint32(m.getRegister(reg)))
-		copy(m.memory[addr:addr+4], bytes[:])
+		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	case datatype.U64, datatype.UNSET:
 		bytes := utils.Bytes8(m.getRegister(reg))
-		copy(m.memory[addr:addr+8], bytes[:])
+		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	}
 }
 
@@ -266,13 +266,13 @@ func (m *Machine) handleMovAofLit() {
 		m.memory[addr] = byte(lit)
 	case datatype.U16:
 		bytes := utils.Bytes2(uint16(lit))
-		copy(m.memory[addr:addr+2], bytes[:])
+		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	case datatype.U32:
 		bytes := utils.Bytes4(uint32(lit))
-		copy(m.memory[addr:addr+4], bytes[:])
+		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	case datatype.U64, datatype.UNSET:
 		bytes := utils.Bytes8(uint64(lit))
-		copy(m.memory[addr:addr+8], bytes[:])
+		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	}
 }
 

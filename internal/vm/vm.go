@@ -95,10 +95,16 @@ func (m *Machine) Run() {
 			opcode.JLE_LIT, opcode.JLE_REG,
 			opcode.JGE_LIT, opcode.JGE_REG:
 			m.handleJump(op)
-		case opcode.PUSH_LIT, opcode.PUSH_REG:
-			m.handlePush(op)
+		case opcode.PUSH_LIT:
+			m.handlePushLit()
+		case opcode.PUSH_REG:
+			m.handlePushReg()
+		case opcode.PUSH_AOF:
+			m.handlePushAof()
 		case opcode.POP_REG:
-			m.handlePop(op)
+			m.handlePopReg()
+		case opcode.POP_AOF:
+			m.handlePopAof()
 		case opcode.CALL_LIT:
 			m.handleCallLit()
 		case opcode.RET:
@@ -127,6 +133,23 @@ func (m *Machine) decodeNumber(dataType string, index int) int {
 		log.Fatal("unknown data type", "type", dataType)
 	}
 	return -1
+}
+
+func (m *Machine) decodeNumberBytes(dataType string, index int) []byte {
+	dataType = strings.ToLower(dataType)
+	switch dataType {
+	case "u8":
+		return []byte{m.memory[index]}
+	case "u16":
+		return m.memory[index : index+2]
+	case "u32":
+		return m.memory[index : index+4]
+	case "u64", "unset":
+		return m.memory[index : index+8]
+	default:
+		log.Fatal("unknown data type", "type", dataType)
+	}
+	return nil
 }
 
 func (m *Machine) decodeRegister(index int) int {
@@ -296,28 +319,65 @@ func (m *Machine) readLiteral(dataType datatype.DataType) uint64 {
 	return uint64(lit)
 }
 
-func (m *Machine) stackPush(v uint64) {
+func (m *Machine) stackPush(v []byte) {
 	spIndex := utils.RegisterToIndex("sp")
 	spValue := m.getRegister(spIndex)
 
-	byteArray := utils.Bytes8(v)
+	// byteArray := utils.Bytes8(v)
 
-	memIndex := int(spValue) - 8
+	memIndex := int(spValue) - len(v)
 
-	copy(m.memory[memIndex:memIndex+8], byteArray)
+	copy(m.memory[memIndex:memIndex+len(v)], v)
 
-	m.setRegister(spIndex, spValue-8)
+	m.setRegister(spIndex, spValue-uint64(len(v)))
 }
 
-func (m *Machine) stackPop() uint64 {
+func (m *Machine) stackPopBytes(dataType datatype.DataType) []byte {
 	spIndex := utils.RegisterToIndex("sp")
 	spValue := m.getRegister(spIndex)
 
 	memIndex := int(spValue)
 
-	value := binary.BigEndian.Uint64(m.memory[memIndex : memIndex+8])
+	var value []byte
+	switch dataType {
+	case datatype.U8:
+		value = []byte{m.memory[memIndex]}
+	case datatype.U16:
+		value = m.memory[memIndex : memIndex+dataType.Size()]
+	case datatype.U32:
+		value = m.memory[memIndex : memIndex+dataType.Size()]
+	case datatype.U64, datatype.UNSET:
+		value = m.memory[memIndex : memIndex+dataType.Size()]
+	default:
+		log.Fatal("unknown data type", "type", dataType)
+	}
 
-	m.setRegister(spIndex, spValue+8)
+	m.setRegister(spIndex, spValue+uint64(dataType.Size()))
+
+	return value
+}
+
+func (m *Machine) stackPop(dataType datatype.DataType) uint64 {
+	spIndex := utils.RegisterToIndex("sp")
+	spValue := m.getRegister(spIndex)
+
+	memIndex := int(spValue)
+
+	var value uint64
+	switch dataType {
+	case datatype.U8:
+		value = uint64(m.memory[memIndex])
+	case datatype.U16:
+		value = uint64(binary.BigEndian.Uint16(m.memory[memIndex : memIndex+dataType.Size()]))
+	case datatype.U32:
+		value = uint64(binary.BigEndian.Uint32(m.memory[memIndex : memIndex+dataType.Size()]))
+	case datatype.U64, datatype.UNSET:
+		value = binary.BigEndian.Uint64(m.memory[memIndex : memIndex+dataType.Size()])
+	default:
+		log.Fatal("unknown data type", "type", dataType)
+	}
+
+	m.setRegister(spIndex, spValue+uint64(dataType.Size()))
 
 	return value
 }
