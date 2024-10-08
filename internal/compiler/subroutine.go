@@ -33,7 +33,7 @@ func (c *Compiler) compileCall(instruction *ast.Instruction) error {
 			label:    a.Value,
 			dataType: datatype.UNSET,
 		})
-		*section = append(*section, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}...)
+		*section = append(*section, []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}...)
 	default:
 		return fmt.Errorf("%s expected argument #1 to be NUMBER or IDENTIFIER got %s", instruction.Name, a.String())
 	}

@@ -57,7 +57,7 @@ func (c *Compiler) compileJumpAdr(op opcode.Opcode, identifier *ast.Identifier) 
 		label:    identifier.Value,
 		dataType: datatype.UNSET,
 	})
-	*section = append(*section, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}...)
+	*section = append(*section, []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}...)
 	return nil
 }
 
