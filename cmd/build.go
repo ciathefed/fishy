@@ -135,9 +135,13 @@ func stringValue(value ast.Value) string {
 		return v.Value
 	case *ast.AddressOf:
 		return fmt.Sprintf("[%s]", stringValue(v.Value))
-	case *ast.RegisterOffset:
+	case *ast.RegisterOffsetNumber:
 		return fmt.Sprintf("%s %s %s", stringValue(&v.Left), v.Operator.String(), stringValue(&v.Right))
-	case *ast.LabelOffset:
+	case *ast.RegisterOffsetRegister:
+		return fmt.Sprintf("%s %s %s", stringValue(&v.Left), v.Operator.String(), stringValue(&v.Right))
+	case *ast.LabelOffsetNumber:
+		return fmt.Sprintf("%s %s %s", stringValue(v.Left), v.Operator.String(), stringValue(&v.Right))
+	case *ast.LabelOffsetRegister:
 		return fmt.Sprintf("%s %s %s", stringValue(v.Left), v.Operator.String(), stringValue(&v.Right))
 	}
 

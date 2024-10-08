@@ -87,9 +87,11 @@ func (c *Compiler) Compile() ([]byte, error) {
 
 	bytecode := c.headerStart
 
-	stStart := len(bytecode) + 16
+	stSize := c.symbolTable.GetSize()
+	stStart := len(bytecode) + 24
 	stEnd := stStart + len(c.headerSymbolTable)
 
+	bytecode = append(bytecode, utils.Bytes8(uint64(stSize))...)
 	bytecode = append(bytecode, utils.Bytes8(uint64(stStart))...)
 	bytecode = append(bytecode, utils.Bytes8(uint64(stEnd))...)
 

@@ -31,10 +31,12 @@ func (r *Register) String() string      { return "REGISTER" }
 func (a *AddressOf) String() string     { return "ADDRESS_OF" }
 func (i *Identifier) String() string    { return "IDENTIFIER" }
 
-func (n *NumberLiteral) Index() int  { return 0 }
-func (s *StringLiteral) Index() int  { return 1 }
-func (r *Register) Index() int       { return 2 }
-func (a *AddressOf) Index() int      { return 3 }
-func (i *Identifier) Index() int     { return 4 }
-func (b *RegisterOffset) Index() int { return 5 }
-func (b *LabelOffset) Index() int    { return 6 }
+func (n *NumberLiteral) Index() int          { return 0 }
+func (s *StringLiteral) Index() int          { return 1 }
+func (r *Register) Index() int               { return 2 }
+func (a *AddressOf) Index() int              { return 3 }
+func (i *Identifier) Index() int             { return 4 }
+func (b *RegisterOffsetNumber) Index() int   { return 5 }
+func (b *RegisterOffsetRegister) Index() int { return 6 }
+func (b *LabelOffsetNumber) Index() int      { return 7 }
+func (b *LabelOffsetRegister) Index() int    { return 8 }

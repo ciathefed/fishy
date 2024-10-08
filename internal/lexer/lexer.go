@@ -127,11 +127,15 @@ func (l *Lexer) readString() token.Token {
 				str.WriteByte('\n')
 			case 't':
 				str.WriteByte('\t')
+			case 'r':
+				str.WriteByte('\r')
 			case 'x':
 				hexValue := l.readHexSequence(2)
 				if hexValue != -1 {
 					str.WriteByte(byte(hexValue))
 				}
+			case 'e', 'E':
+				str.WriteByte('\033')
 			default:
 				str.WriteByte(l.ch)
 			}

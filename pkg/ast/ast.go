@@ -25,23 +25,46 @@ type Sequence struct {
 	Values []Value
 }
 
-type RegisterOffset struct {
+type RegisterOffsetNumber struct {
 	Left     Register
 	Operator Operator
 	Right    NumberLiteral
 }
 
-type LabelOffset struct {
+type RegisterOffsetRegister struct {
+	Left     Register
+	Operator Operator
+	Right    Register
+}
+
+type LabelOffsetNumber struct {
 	Left     Value
 	Operator Operator
 	Right    NumberLiteral
 }
 
-func (l *Label) String() string          { return "LABEL" }
-func (i *Instruction) String() string    { return "INSTRUCTION" }
-func (s *Sequence) String() string       { return "SEQUENCE" }
-func (b *RegisterOffset) String() string { return "REGISTER_OFFSET" }
-func (b *LabelOffset) String() string    { return "LABEL_OFFSET" }
+type LabelOffsetRegister struct {
+	Left     Value
+	Operator Operator
+	Right    Register
+}
+
+func (l *Label) String() string                  { return "LABEL" }
+func (i *Instruction) String() string            { return "INSTRUCTION" }
+func (s *Sequence) String() string               { return "SEQUENCE" }
+func (b *RegisterOffsetNumber) String() string   { return "REGISTER_OFFSET_NUMBER" }
+func (b *RegisterOffsetRegister) String() string { return "REGISTER_OFFSET_REGISTER" }
+func (b *LabelOffsetNumber) String() string      { return "LABEL_OFFSET_NUMBER" }
+func (b *LabelOffsetRegister) String() string    { return "LABEL_OFFSET_REGISTER" }
+
+type OffsetKind int
+
+const (
+	REGISTER_OFFSET_NUMBER OffsetKind = iota
+	REGISTER_OFFSET_REGISTER
+	LABEL_OFFSET_NUMBER
+	LABEL_OFFSET_REGISTER
+)
 
 type Operator int
 

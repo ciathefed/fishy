@@ -1,0 +1,105 @@
+;
+; In this example learn how to listen on localhost,
+; accept username and password, then compare them to
+; return a success or error message.
+;
+
+#include "stdlib/os.fi"
+#include "stdlib/net.fi"
+
+.section data
+username_prompt:        db "username: ", 0
+password_prompt:        db "password: ", 0
+correct_username:       db "admin\r\n", 0
+correct_password:       db "password\r\n", 0
+invalid_username_error: db "\e[31minvalid username!\e[0m\n", 0
+invalid_password_error: db "\e[31minvalid password!\e[0m\n", 0
+success_message:        db "\e[32msuccessfully logged in!\e[0m\n", 0
+socket_listen_opts:
+    db 0
+    db 127, 0, 0, 1
+    dw 8080
+
+.section bss
+fd:         resb 1
+conn:       resb 1
+username:   resb 64
+password:   resb 64
+
+.section text
+_start:
+    net_tcp_listen socket_listen_opts
+    mov [fd], x0
+
+.loop:
+    net_accept [fd]
+    mov [conn], x0
+
+    write [conn], username_prompt, 10
+    read [conn], username, 64
+    write [conn], password_prompt, 10
+    read [conn], password, 64
+
+    push username
+    push correct_username
+    call strcmp
+    add sp, 16
+    cmp x0, 1
+    jeq .invalid_username
+
+    push password
+    push correct_password
+    call strcmp
+    add sp, 16
+    cmp x0, 1
+    jeq .invalid_password
+
+    jmp .success
+    hlt
+
+.invalid_username:
+    write [conn], invalid_username_error, 27
+    close [conn]
+    jmp .loop
+
+.invalid_password:
+    write [conn], invalid_password_error, 27
+    close [conn]
+    jmp .loop
+
+.success:
+    write [conn], success_message, 34
+    close [conn]
+    jmp .loop
+
+strcmp:
+    push fp
+    mov fp, sp
+
+    mov x0, [fp + 16]
+    mov x1, [fp + 24]
+    xor x2, x2
+
+.strcmp_loop:
+    mov x3, [x0 + x2]
+    mov x4, [x1 + x2]
+
+    cmp x3, x4
+    jne .strcmp_not_equal
+
+    cmp x3, 0
+    jeq .strcmp_equal
+
+    add x2, 1
+    jmp .strcmp_loop
+
+.strcmp_not_equal:
+    mov x0, 1
+    jmp .strcmp_end
+
+.strcmp_equal:
+    xor x0, x0
+
+.strcmp_end:
+    pop fp
+    ret

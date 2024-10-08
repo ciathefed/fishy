@@ -27,8 +27,18 @@ func (c *Compiler) compilePush(instruction *ast.Instruction) error {
 		opcode := utils.Bytes2(uint16(opcode.PUSH_LIT))
 		*section = append(*section, opcode...)
 		*section = append(*section, utils.Bytes8(uint64(num))...)
+	case *ast.Identifier:
+		opcode := utils.Bytes2(uint16(opcode.PUSH_LIT))
+		*section = append(*section, opcode...)
+		c.fixups = append(c.fixups, Fixup{
+			addr:     len(*section),
+			section:  c.currentSection,
+			label:    a.Value,
+			dataType: instruction.DataType,
+		})
+		*section = append(*section, instruction.DataType.MakeBytes(0)...)
 	default:
-		return fmt.Errorf("%s expected argument #1 to be REGISTER or NUMBER got %s", instruction.Name, a.String())
+		return fmt.Errorf("%s expected argument #1 to be REGISTER, NUMBER or IDENTIFIER got %s", instruction.Name, a.String())
 	}
 
 	return nil

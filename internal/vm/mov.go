@@ -86,10 +86,16 @@ func (m *Machine) handleMovRegAof() {
 	case *ast.Register:
 		num := m.getRegister(v.Value)
 		addr += int(num)
-	case *ast.RegisterOffset:
+	case *ast.RegisterOffsetNumber:
 		num := m.getRegister(v.Left.Value)
 		addr += int(num)
-	case *ast.LabelOffset:
+	case *ast.RegisterOffsetRegister:
+		num := m.getRegister(v.Left.Value)
+		addr += int(num)
+	case *ast.LabelOffsetNumber:
+		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
+		addr += int(num)
+	case *ast.LabelOffsetRegister:
 		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
 		addr += int(num)
 	default:
@@ -105,10 +111,14 @@ func (m *Machine) handleMovRegAof() {
 	}
 
 	switch v := value.(type) {
-	case *ast.RegisterOffset:
+	case *ast.RegisterOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
-	case *ast.LabelOffset:
+	case *ast.RegisterOffsetRegister:
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
+	case *ast.LabelOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
+	case *ast.LabelOffsetRegister:
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
 	}
 
 	switch dt {
@@ -142,10 +152,16 @@ func (m *Machine) handleMovAofReg() {
 	case *ast.Register:
 		num := m.getRegister(v.Value)
 		addr += int(num)
-	case *ast.RegisterOffset:
+	case *ast.RegisterOffsetNumber:
 		num := m.getRegister(v.Left.Value)
 		addr += int(num)
-	case *ast.LabelOffset:
+	case *ast.RegisterOffsetRegister:
+		num := m.getRegister(v.Left.Value)
+		addr += int(num)
+	case *ast.LabelOffsetNumber:
+		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
+		addr += int(num)
+	case *ast.LabelOffsetRegister:
 		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
 		addr += int(num)
 	default:
@@ -165,10 +181,14 @@ func (m *Machine) handleMovAofReg() {
 	}
 
 	switch v := value.(type) {
-	case *ast.RegisterOffset:
+	case *ast.RegisterOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
-	case *ast.LabelOffset:
+	case *ast.RegisterOffsetRegister:
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
+	case *ast.LabelOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
+	case *ast.LabelOffsetRegister:
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
 	}
 
 	switch dt {
@@ -202,10 +222,16 @@ func (m *Machine) handleMovAofLit() {
 	case *ast.Register:
 		num := m.getRegister(v.Value)
 		addr += int(num)
-	case *ast.RegisterOffset:
+	case *ast.RegisterOffsetNumber:
 		num := m.getRegister(v.Left.Value)
 		addr += int(num)
-	case *ast.LabelOffset:
+	case *ast.RegisterOffsetRegister:
+		num := m.getRegister(v.Left.Value)
+		addr += int(num)
+	case *ast.LabelOffsetNumber:
+		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
+		addr += int(num)
+	case *ast.LabelOffsetRegister:
 		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
 		addr += int(num)
 	default:
@@ -225,10 +251,14 @@ func (m *Machine) handleMovAofLit() {
 	}
 
 	switch v := value.(type) {
-	case *ast.RegisterOffset:
+	case *ast.RegisterOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
-	case *ast.LabelOffset:
+	case *ast.RegisterOffsetRegister:
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
+	case *ast.LabelOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
+	case *ast.LabelOffsetRegister:
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
 	}
 
 	switch dt {

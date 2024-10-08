@@ -163,12 +163,30 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 		offset := m.decodeNumber(dataType.String(), pos)
 		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 
-		return &ast.RegisterOffset{
+		return &ast.RegisterOffsetNumber{
 			Left:     ast.Register{Value: reg},
 			Operator: op,
 			Right:    ast.NumberLiteral{Value: strconv.Itoa(offset)},
 		}
 	case 6:
+		pos := m.position()
+		reg0 := m.decodeRegister(pos)
+		m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+		pos = m.position()
+		op := ast.Operator(m.decodeNumber("u8", pos))
+		m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+		pos = m.position()
+		reg1 := m.decodeRegister(pos)
+		m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+		return &ast.RegisterOffsetRegister{
+			Left:     ast.Register{Value: reg0},
+			Operator: op,
+			Right:    ast.Register{Value: reg1},
+		}
+	case 7:
 		pos := m.position()
 		addr := m.decodeNumber(dataType.String(), pos)
 		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
@@ -181,10 +199,28 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 		offset := m.decodeNumber(dataType.String(), pos)
 		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 
-		return &ast.LabelOffset{
+		return &ast.LabelOffsetNumber{
 			Left:     &ast.NumberLiteral{Value: strconv.Itoa(addr)},
 			Operator: op,
 			Right:    ast.NumberLiteral{Value: strconv.Itoa(offset)},
+		}
+	case 8:
+		pos := m.position()
+		addr := m.decodeNumber(dataType.String(), pos)
+		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+
+		pos = m.position()
+		op := ast.Operator(m.decodeNumber("u8", pos))
+		m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+		pos = m.position()
+		reg := m.decodeRegister(pos)
+		m.incRegister(utils.RegisterToIndex("ip"), 1)
+
+		return &ast.LabelOffsetRegister{
+			Left:     &ast.NumberLiteral{Value: strconv.Itoa(addr)},
+			Operator: op,
+			Right:    ast.Register{Value: reg},
 		}
 	default:
 		log.Fatal("unknown value index", "index", indexValue)
@@ -199,18 +235,29 @@ func (m *Machine) parserHeaderStart() {
 }
 
 func (m *Machine) parseHeaderSymbolTable() {
-	start := binary.BigEndian.Uint64(m.memory[:8]) - 8
-	end := binary.BigEndian.Uint64(m.memory[8:16]) - 8
+	size := int(binary.BigEndian.Uint64(m.memory[:8]))
+	start := binary.BigEndian.Uint64(m.memory[8:16]) - 8
+	end := binary.BigEndian.Uint64(m.memory[16:24]) - 8
 
 	keyValues := m.memory[start:end]
 
-	for i := 0; i < len(keyValues); i += 9 {
-		if i+8 >= len(keyValues) {
-			log.Fatal("symbol table is not multiple of 9", "length", len(keyValues))
+	for i := 0; i < len(keyValues); i += size + 1 {
+		if i+size >= len(keyValues) {
+			log.Fatal(fmt.Sprintf("symbol table is not multiple of %d", size+1), "length", len(keyValues))
 		}
 
-		key := binary.BigEndian.Uint64(keyValues[i : i+8])
-		value := keyValues[i+8]
+		var key uint64
+		switch size {
+		case 1:
+			key = uint64(keyValues[i])
+		case 2:
+			key = uint64(binary.BigEndian.Uint16(keyValues[i : i+size]))
+		case 4:
+			key = uint64(binary.BigEndian.Uint32(keyValues[i : i+size]))
+		default:
+			key = binary.BigEndian.Uint64(keyValues[i : i+size])
+		}
+		value := keyValues[i+size]
 
 		m.symbolTable[key] = datatype.DataType(value)
 	}

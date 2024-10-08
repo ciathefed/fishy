@@ -186,23 +186,37 @@ func (p *Parser) parseExpression() (ast.Value, error) {
 
 	switch left := leftExpr.(type) {
 	case *ast.Identifier:
-		if right := rightExpr.(*ast.NumberLiteral); right != nil {
-			return &ast.LabelOffset{
+		switch right := rightExpr.(type) {
+		case *ast.NumberLiteral:
+			return &ast.LabelOffsetNumber{
 				Left:     left,
 				Operator: operator,
 				Right:    *right,
 			}, nil
-		} else {
+		case *ast.Register:
+			return &ast.LabelOffsetRegister{
+				Left:     left,
+				Operator: operator,
+				Right:    *right,
+			}, nil
+		default:
 			log.Fatal("unknown expression", "left", left.String(), "op", operator.String(), "right", right.String())
 		}
 	case *ast.Register:
-		if right := rightExpr.(*ast.NumberLiteral); right != nil {
-			return &ast.RegisterOffset{
+		switch right := rightExpr.(type) {
+		case *ast.NumberLiteral:
+			return &ast.RegisterOffsetNumber{
 				Left:     *left,
 				Operator: operator,
 				Right:    *right,
 			}, nil
-		} else {
+		case *ast.Register:
+			return &ast.RegisterOffsetRegister{
+				Left:     *left,
+				Operator: operator,
+				Right:    *right,
+			}, nil
+		default:
 			log.Fatal("unknown expression", "left", left.String(), "op", operator.String(), "right", right.String())
 		}
 	default:
