@@ -19,10 +19,6 @@ var runCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if verbose {
-			log.Info("read bytecode from input", "file", inputFile, "bytes", len(inputData))
-		}
-
 		m := vm.New(inputData, memorySize, false)
 		m.Run()
 

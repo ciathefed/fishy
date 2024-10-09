@@ -6,7 +6,6 @@ import (
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
-	"strconv"
 )
 
 func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
@@ -40,7 +39,7 @@ func getArithmeticArgsBytecode(dataType datatype.DataType, arg0, arg1 interface{
 	case *ast.Register:
 		switch a1 := arg1.(type) {
 		case *ast.NumberLiteral:
-			num, err := strconv.ParseUint(a1.Value, 10, 64)
+			num, err := ParseStringUint(a1.Value)
 			if err != nil {
 				return nil, "", err
 			}

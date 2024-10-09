@@ -25,11 +25,11 @@ func (m *Machine) handlePushReg() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	reg := m.decodeRegister(pos)
+	rdt := datatype.DataType(m.decodeNumber("u8", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	reg := m.decodeRegister(pos)
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	m.stackPush(rdt.MakeBytes(m.getRegister(reg)))

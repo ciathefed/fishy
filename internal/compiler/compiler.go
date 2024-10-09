@@ -193,7 +193,10 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 			case *ast.StringLiteral:
 				bytecode = append(bytecode, []byte(v.Value)...)
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(v.Value, 10, 8)
+				num, err := ParseStringUint(v.Value)
+				if err != nil {
+					return err
+				}
 				bytecode = append(bytecode, byte(num))
 			default:
 				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
@@ -211,7 +214,10 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(v.Value, 10, 16)
+				num, err := ParseStringUint(v.Value)
+				if err != nil {
+					return err
+				}
 				bytecode = append(bytecode, utils.Bytes2(uint16(num))...)
 			default:
 				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
@@ -229,7 +235,10 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(v.Value, 10, 32)
+				num, err := ParseStringUint(v.Value)
+				if err != nil {
+					return err
+				}
 				bytecode = append(bytecode, utils.Bytes4(uint32(num))...)
 			default:
 				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
@@ -247,7 +256,10 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(v.Value, 10, 64)
+				num, err := ParseStringUint(v.Value)
+				if err != nil {
+
+				}
 				bytecode = append(bytecode, utils.Bytes8(num)...)
 			default:
 				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
@@ -264,7 +276,10 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(v.Value, 10, 64)
+				num, err := ParseStringUint(v.Value)
+				if err != nil {
+					return err
+				}
 				amount += int(num)
 			default:
 				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
@@ -282,7 +297,10 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(v.Value, 10, 64)
+				num, err := ParseStringUint(v.Value)
+				if err != nil {
+					return err
+				}
 				amount += int(num)
 			default:
 				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
@@ -300,7 +318,10 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(v.Value, 10, 64)
+				num, err := ParseStringUint(v.Value)
+				if err != nil {
+					return err
+				}
 				amount += int(num)
 			default:
 				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
@@ -318,7 +339,10 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(v.Value, 10, 64)
+				num, err := ParseStringUint(v.Value)
+				if err != nil {
+					return err
+				}
 				amount += int(num)
 			default:
 				return fmt.Errorf("%s expected argument #%d to be NUMBER got %s", sequence.Name, i, v.String())
@@ -443,4 +467,13 @@ func (c *Compiler) currentSectionBytecode() *[]byte {
 		log.Fatal("unknown current section", "section", c.currentSection)
 	}
 	return nil
+}
+
+func ParseStringUint(value string) (uint64, error) {
+	intVal, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid integer string: %s", value)
+	}
+
+	return uint64(intVal), nil
 }

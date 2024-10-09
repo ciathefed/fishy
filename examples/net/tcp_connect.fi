@@ -3,20 +3,20 @@
 ; and send a message
 ;
 
-#include "stdlib/os.fi"
-#include "stdlib/net.fi"
+#include "../../stdlib/os.fi"
+#include "../../stdlib/net.fi"
 
 .section data
 socket_connect_opts:
-    db 0
-    db 127, 0, 0, 1
-    dw 8080
+    db $0
+    db $127, $0, $0, $1
+    dw $8080
 
 message:
-    db "Hello, World!\n", 0
+    db "Hello, World!\n", 0x00
 
 .section bss
-conn:   resb 1
+conn:   resb $1
 
 .section text
 _start:
@@ -25,7 +25,7 @@ _start:
     syscall
     mov [conn], x0
 
-    write [conn], message, 14
+    write [conn], message, $14
 
     hlt
     

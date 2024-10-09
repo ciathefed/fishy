@@ -1,0 +1,43 @@
+;
+; This example copies data from one memory location to another and
+; write it to STDOUT
+;
+
+#include "../stdlib/os.fi"
+#include "../stdlib/io.fi"
+
+.section data
+source:
+    db "Hello, World!\n", 0
+
+.section bss
+destination:
+    resb 14
+
+.section text
+_start:
+    mov x0, source
+    mov x1, destination
+    mov x2, $14
+
+    call memcpy
+
+    write STDOUT, destination, 14
+
+    hlt
+
+memcpy:
+    cmp x2, $0
+    jeq .done
+
+    mov x3, [x0]
+    mov [x1], x3
+
+    add x0, $1
+    add x1, $1
+    sub x2, $1
+
+    jmp memcpy
+
+.done:
+    ret

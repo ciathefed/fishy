@@ -5,7 +5,6 @@ import (
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
-	"strconv"
 )
 
 func (c *Compiler) compileMov(instruction *ast.Instruction) error {
@@ -28,7 +27,10 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			*section = append(*section, byte(a0.Value))
 			*section = append(*section, byte(a1.Value))
 		case *ast.NumberLiteral:
-			num, _ := strconv.ParseUint(a1.Value, 10, 64)
+			num, err := ParseStringUint(a1.Value)
+			if err != nil {
+				return err
+			}
 			opcode := utils.Bytes2(uint16(opcode.MOV_REG_LIT))
 			*section = append(*section, opcode...)
 			*section = append(*section, byte(instruction.DataType))
@@ -55,7 +57,10 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			index := a1.Value.Index()
 			switch value := a1.Value.(type) {
 			case *ast.NumberLiteral:
-				num, _ := strconv.ParseUint(value.Value, 10, 64)
+				num, err := ParseStringUint(value.Value)
+				if err != nil {
+					return err
+				}
 				*section = append(*section, byte(index))
 				*section = append(*section, instruction.DataType.MakeBytes(num)...)
 			case *ast.Register:
@@ -71,7 +76,10 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 				})
 				*section = append(*section, instruction.DataType.MakeBytes(0)...)
 			case *ast.RegisterOffsetNumber:
-				num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+				num, err := ParseStringUint(value.Right.Value)
+				if err != nil {
+					return err
+				}
 				*section = append(*section, byte(index))
 				*section = append(*section, byte(value.Left.Value))
 				*section = append(*section, byte(int(value.Operator)))
@@ -82,7 +90,10 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 				*section = append(*section, byte(int(value.Operator)))
 				*section = append(*section, byte(value.Right.Value))
 			case *ast.LabelOffsetNumber:
-				num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+				num, err := ParseStringUint(value.Right.Value)
+				if err != nil {
+					return err
+				}
 				*section = append(*section, byte(index))
 				c.fixups = append(c.fixups, Fixup{
 					addr:     len(*section),
@@ -123,7 +134,10 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			opcode := utils.Bytes2(uint16(opcode.MOV_AOF_LIT))
 			*section = append(*section, opcode...)
 			*section = append(*section, byte(instruction.DataType))
-			num, _ := strconv.ParseUint(a1.Value, 10, 64)
+			num, err := ParseStringUint(a1.Value)
+			if err != nil {
+				return err
+			}
 			bytecode = append(bytecode, instruction.DataType.MakeBytes(num)...)
 		default:
 			return fmt.Errorf("mov expected argument #2 to be REGISTER or NUMBER got %s", a1.String())
@@ -132,7 +146,10 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 		index := a0.Value.Index()
 		switch value := a0.Value.(type) {
 		case *ast.NumberLiteral:
-			num, _ := strconv.ParseUint(value.Value, 10, 64)
+			num, err := ParseStringUint(value.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			*section = append(*section, instruction.DataType.MakeBytes(num)...)
 		case *ast.Register:
@@ -148,7 +165,10 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			})
 			*section = append(*section, instruction.DataType.MakeBytes(0)...)
 		case *ast.RegisterOffsetNumber:
-			num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+			num, err := ParseStringUint(value.Right.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			*section = append(*section, byte(value.Left.Value))
 			*section = append(*section, byte(int(value.Operator)))
@@ -159,7 +179,10 @@ func (c *Compiler) compileMov(instruction *ast.Instruction) error {
 			*section = append(*section, byte(int(value.Operator)))
 			*section = append(*section, byte(value.Right.Value))
 		case *ast.LabelOffsetNumber:
-			num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+			num, err := ParseStringUint(value.Right.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			c.fixups = append(c.fixups, Fixup{
 				addr:     len(*section),

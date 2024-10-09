@@ -5,7 +5,6 @@ import (
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
-	"strconv"
 )
 
 func (c *Compiler) compilePush(instruction *ast.Instruction) error {
@@ -24,7 +23,10 @@ func (c *Compiler) compilePush(instruction *ast.Instruction) error {
 		*section = append(*section, byte(instruction.DataType))
 		*section = append(*section, byte(a.Value))
 	case *ast.NumberLiteral:
-		num, _ := strconv.ParseUint(a.Value, 10, 64)
+		num, err := ParseStringUint(a.Value)
+		if err != nil {
+			return err
+		}
 		opcode := utils.Bytes2(uint16(opcode.PUSH_LIT))
 		*section = append(*section, opcode...)
 		*section = append(*section, byte(instruction.DataType))
@@ -48,7 +50,10 @@ func (c *Compiler) compilePush(instruction *ast.Instruction) error {
 		index := a.Value.Index()
 		switch value := a.Value.(type) {
 		case *ast.NumberLiteral:
-			num, _ := strconv.ParseUint(value.Value, 10, 64)
+			num, err := ParseStringUint(value.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			*section = append(*section, instruction.DataType.MakeBytes(num)...)
 		case *ast.Register:
@@ -64,7 +69,10 @@ func (c *Compiler) compilePush(instruction *ast.Instruction) error {
 			})
 			*section = append(*section, instruction.DataType.MakeBytes(0)...)
 		case *ast.RegisterOffsetNumber:
-			num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+			num, err := ParseStringUint(value.Right.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			*section = append(*section, byte(value.Left.Value))
 			*section = append(*section, byte(int(value.Operator)))
@@ -75,7 +83,10 @@ func (c *Compiler) compilePush(instruction *ast.Instruction) error {
 			*section = append(*section, byte(int(value.Operator)))
 			*section = append(*section, byte(value.Right.Value))
 		case *ast.LabelOffsetNumber:
-			num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+			num, err := ParseStringUint(value.Right.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			c.fixups = append(c.fixups, Fixup{
 				addr:     len(*section),
@@ -130,7 +141,10 @@ func (c *Compiler) compilePop(instruction *ast.Instruction) error {
 		index := a.Value.Index()
 		switch value := a.Value.(type) {
 		case *ast.NumberLiteral:
-			num, _ := strconv.ParseUint(value.Value, 10, 64)
+			num, err := ParseStringUint(value.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			*section = append(*section, instruction.DataType.MakeBytes(num)...)
 		case *ast.Register:
@@ -146,7 +160,10 @@ func (c *Compiler) compilePop(instruction *ast.Instruction) error {
 			})
 			*section = append(*section, instruction.DataType.MakeBytes(0)...)
 		case *ast.RegisterOffsetNumber:
-			num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+			num, err := ParseStringUint(value.Right.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			*section = append(*section, byte(value.Left.Value))
 			*section = append(*section, byte(int(value.Operator)))
@@ -157,7 +174,10 @@ func (c *Compiler) compilePop(instruction *ast.Instruction) error {
 			*section = append(*section, byte(int(value.Operator)))
 			*section = append(*section, byte(value.Right.Value))
 		case *ast.LabelOffsetNumber:
-			num, _ := strconv.ParseUint(value.Right.Value, 10, 64)
+			num, err := ParseStringUint(value.Right.Value)
+			if err != nil {
+				return err
+			}
 			*section = append(*section, byte(index))
 			c.fixups = append(c.fixups, Fixup{
 				addr:     len(*section),

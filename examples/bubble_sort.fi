@@ -1,0 +1,44 @@
+;
+; This example sorts an array using bubble sort algorithm
+;
+
+.section data
+array:          db 1, 23, 19, 7, 91, 4, 2, 45, 78, 255, 8, 3, 9, 33, 48, 99, 53, 100, 11, 66
+array_len:      db 20
+
+.section text
+_start:
+    mov x0, array
+    mov x1, [array_len]
+    call bubble_sort
+    hlt
+
+bubble_sort:
+    sub x1, 1
+
+.outer_loop:
+    xor x2, x2
+
+.inner_loop:
+    mov x3, [x0 + x2]
+    add x2, 1
+    mov x4, [x0 + x2]
+    sub x2, 1
+    cmp x3, x4
+    jle .no_swap
+
+    mov [x0 + x2], x4
+    add x2, 1
+    mov [x0 + x2], x3
+    sub x2, 1
+
+.no_swap:
+    add x2, 1
+    cmp x2, x1
+    jlt .inner_loop
+
+    sub x1, 1
+    cmp x1, 0
+    jgt .outer_loop
+
+    ret

@@ -1,0 +1,26 @@
+;
+; This example computes the factorial of a given number
+; using recursion and stores the result in register x0
+;
+
+.section text
+factorial:
+    cmp x0, 1
+    jeq .base_case
+
+    push x0
+    sub x0, 1
+    call factorial
+    pop x1
+    mul x0, x1
+
+    ret
+
+.base_case:
+    mov x0, 1
+    ret
+
+_start:
+    mov x0, 10
+    call factorial
+    hlt

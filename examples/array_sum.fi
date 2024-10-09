@@ -1,0 +1,31 @@
+;
+; Example of summing values in an array
+;
+
+.section data
+array:      dw 1, 2, 3, 4, 5
+array_len:  db 5
+
+.section text
+_start:
+    mov x0, array
+    mov x1, [array_len]
+    mov x2, 0
+    mov x3, 0
+    call array_sum
+    mov x0, x3
+    hlt
+
+array_sum:
+
+.loop_sum:
+    mov u16 x4, [x0]
+    cmp x2, x1
+    jeq .done_sum
+    add x3, x4
+    add x2, 1
+    add x0, 2
+    jmp .loop_sum
+
+.done_sum:
+    ret

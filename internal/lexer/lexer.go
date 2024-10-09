@@ -35,6 +35,12 @@ func (l *Lexer) NextToken() token.Token {
 	case ':':
 		l.readChar()
 		return token.Token{Kind: token.COLON, Value: ":", Start: start, End: l.position}
+	case '(':
+		l.readChar()
+		return token.Token{Kind: token.LEFT_PAREN, Value: "(", Start: start, End: l.position}
+	case ')':
+		l.readChar()
+		return token.Token{Kind: token.RIGHT_PAREN, Value: ")", Start: start, End: l.position}
 	case '[':
 		l.readChar()
 		return token.Token{Kind: token.LEFT_BRACKET, Value: "[", Start: start, End: l.position}
@@ -45,6 +51,9 @@ func (l *Lexer) NextToken() token.Token {
 		l.readChar()
 		return token.Token{Kind: token.PLUS, Value: "+", Start: start, End: l.position}
 	case '-':
+		if isDigit(l.peekChar()) {
+			return l.readImmediateWithNegative(start)
+		}
 		l.readChar()
 		return token.Token{Kind: token.MINUS, Value: "-", Start: start, End: l.position}
 	case '*':
@@ -108,7 +117,7 @@ func (l *Lexer) readChar() {
 
 func (l *Lexer) readIdentifier() string {
 	start := l.position
-	for isLetter(l.ch) || isDigit(l.ch) || l.ch == '_' || l.ch == '.' {
+	for isLetter(l.ch) || isDigit(l.ch) || l.ch == '_' || l.ch == '.' || l.ch == '!' {
 		l.readChar()
 	}
 	return l.input[start:l.position]
@@ -151,8 +160,16 @@ func (l *Lexer) readString() token.Token {
 
 func (l *Lexer) readImmediate() token.Token {
 	start := l.position
+	return l.readImmediateWithNegative(start)
+}
+
+func (l *Lexer) readImmediateWithNegative(start int) token.Token {
 	isHex := false
 	isOct := false
+
+	if l.ch == '-' {
+		l.readChar()
+	}
 
 	if l.ch == '$' {
 		l.readChar()
@@ -181,21 +198,19 @@ func (l *Lexer) readImmediate() token.Token {
 	value := l.input[start:l.position]
 	value = strings.TrimPrefix(value, "$")
 
+	var num int64
+	var err error
+
 	if isHex {
-		num, err := strconv.ParseUint(value[2:], 16, 64)
-		if err == nil {
-			return token.Token{Kind: token.IMMEDIATE, Value: fmt.Sprintf("%d", num), Start: start, End: l.position}
-		}
+		num, err = strconv.ParseInt(value[2:], 16, 64)
 	} else if isOct {
-		num, err := strconv.ParseUint(value[2:], 8, 64)
-		if err == nil {
-			return token.Token{Kind: token.IMMEDIATE, Value: fmt.Sprintf("%d", num), Start: start, End: l.position}
-		}
+		num, err = strconv.ParseInt(value[2:], 8, 64)
 	} else {
-		num, err := strconv.Atoi(value)
-		if err == nil {
-			return token.Token{Kind: token.IMMEDIATE, Value: fmt.Sprintf("%d", num), Start: start, End: l.position}
-		}
+		num, err = strconv.ParseInt(value, 10, 64)
+	}
+
+	if err == nil {
+		return token.Token{Kind: token.IMMEDIATE, Value: fmt.Sprintf("%d", num), Start: start, End: l.position}
 	}
 
 	return token.Token{Kind: token.IMMEDIATE, Value: value, Start: start, End: l.position}
@@ -254,7 +269,6 @@ func isSequence(ident string) bool {
 
 func isRegister(ident string) bool {
 	return slices.Contains(utils.Registers, strings.ToLower(ident))
-
 }
 
 func isDataType(ident string) bool {

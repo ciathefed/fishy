@@ -1,7 +1,7 @@
-#define SYS_NET_LISTEN_TCP  0x06
-#define SYS_NET_CONNECT_TCP 0x07
-#define SYS_NET_ACCEPT      0x08
-#define SYS_NET_GETPEERNAME 0x09
+#define SYS_NET_LISTEN_TCP  0x07
+#define SYS_NET_CONNECT_TCP 0x08
+#define SYS_NET_ACCEPT      0x09
+#define SYS_NET_GETPEERNAME 0x0A
 
 
 #macro net_tcp_listen opts

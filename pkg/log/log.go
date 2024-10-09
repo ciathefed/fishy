@@ -11,6 +11,7 @@ var logger = log.NewWithOptions(os.Stderr, log.Options{
 	// ReportCaller:    true,
 	ReportTimestamp: true,
 	TimeFormat:      time.Kitchen,
+	Level:           log.DebugLevel,
 })
 
 func Info(msg interface{}, keyVals ...interface{}) {

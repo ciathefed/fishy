@@ -22,26 +22,33 @@ var buildCmd = &cobra.Command{
 	Short: "Compile a FishyASM file to Fishy Bytecode",
 	Run: func(cmd *cobra.Command, args []string) {
 		inputFile := args[0]
-		inputData, err := os.ReadFile(inputFile)
-		if err != nil {
-			log.Fatal(err)
-		}
 
-		if verbose {
-			log.Info("read source code from input", "file", inputFile, "bytes", len(inputData))
-		}
-
-		source := inputData
+		var source string
 		if !skipPreprocessing {
-			pp := preprocessor.New(source)
-			source = []byte(pp.Process())
+			pp, err := preprocessor.New(inputFile, false)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = pp.Process()
+			if err != nil {
+				log.Fatal(err)
+			}
+			source = pp.Output()
 		} else {
+			sourceBytes, err := os.ReadFile(inputFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+			source = string(sourceBytes)
+
 			if verbose {
 				log.Infof("skipping pre-processing")
 			}
 		}
 
-		l := lexer.New(string(source))
+		// fmt.Println(source)
+
+		l := lexer.New(source)
 		if vomitLexer {
 			log.Info("vomiting lexer output 🤮")
 			for {

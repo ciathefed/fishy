@@ -2,8 +2,8 @@
 ; This example shows you how to use define
 ;
 
-#define TEN    10
-#define TWENTY 20
+#define TEN    $10
+#define TWENTY $20
 
 .section text
 _start:

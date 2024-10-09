@@ -6,7 +6,6 @@ import (
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
-	"strconv"
 )
 
 func (c *Compiler) compileJump(instruction *ast.Instruction) error {
@@ -35,7 +34,10 @@ func (c *Compiler) compileJump(instruction *ast.Instruction) error {
 
 func (c *Compiler) compileJumpLit(op opcode.Opcode, number *ast.NumberLiteral) error {
 	section := c.currentSectionBytecode()
-	num, _ := strconv.ParseUint(number.Value, 10, 64)
+	num, err := ParseStringUint(number.Value)
+	if err != nil {
+		return err
+	}
 	*section = append(*section, utils.Bytes2(uint16(op))...)
 	*section = append(*section, utils.Bytes8(num)...)
 	return nil

@@ -15,6 +15,8 @@ const (
 	COMMENT       TokenKind = "COMMENT"
 	COMMA         TokenKind = "COMMA"
 	COLON         TokenKind = "COLON"
+	LEFT_PAREN    TokenKind = "LEFT_PAREN"
+	RIGHT_PAREN   TokenKind = "RIGHT_PAREN"
 	LEFT_BRACKET  TokenKind = "LEFT_BRACKET"
 	RIGHT_BRACKET TokenKind = "RIGHT_BRACKET"
 	PLUS          TokenKind = "PLUS"

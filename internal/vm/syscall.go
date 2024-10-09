@@ -3,9 +3,7 @@ package vm
 import (
 	"bytes"
 	"encoding/binary"
-	"fishy/pkg/log"
 	"fishy/pkg/utils"
-	"fmt"
 	"net"
 	"os"
 	"strconv"
@@ -34,6 +32,7 @@ const (
 	SYS_READ
 	SYS_WRITE
 	SYS_CLOSE
+	SYS_STRERR
 	SYS_NET_LISTEN_TCP
 	SYS_NET_CONNECT_TCP
 	SYS_NET_ACCEPT
@@ -51,12 +50,24 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		mode := m.getRegister(utils.RegisterToIndex("x2"))
 		perm := m.getRegister(utils.RegisterToIndex("x3"))
 
+		n := -1
+		if addr >= uint64(len(m.memory)) {
+			m.SetErrorCodeRegister(EADDROUTOFBOUNDS)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
+		if length == 0 || addr+length > uint64(len(m.memory)) {
+			m.SetErrorCodeRegister(EINVALIDLENGTH)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
 		path := m.memory[addr : addr+length]
 
 		fd, err := syscall.Open(string(path), int(mode), uint32(perm))
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_OPEN)
-			// fd = -1
+			m.SetErrorCodeRegister(MatchString(err.Error()))
 		}
 
 		m.setRegister(utils.RegisterToIndex("x0"), uint64(fd))
@@ -69,8 +80,9 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		buffer := make([]byte, length)
 		n, err := syscall.Read(int(fd), buffer)
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_READ)
-			// n = -1
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 
 		for i := 0; i < int(length); i++ {
@@ -84,14 +96,27 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		addr := m.getRegister(utils.RegisterToIndex("x1"))
 		length := m.getRegister(utils.RegisterToIndex("x2"))
 
+		n := -1
 		start := int(addr)
 		end := start + int(length)
+
+		if start >= len(m.memory) {
+			m.SetErrorCodeRegister(EADDROUTOFBOUNDS)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
+		if start < 0 || end > len(m.memory) || start >= end {
+			m.SetErrorCodeRegister(EINVALIDLENGTH)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
 		buffer := m.memory[start:end]
 
 		n, err := syscall.Write(int(fd), buffer)
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_WRITE)
-			// n = -1
+			m.SetErrorCodeRegister(MatchString(err.Error()))
 		}
 
 		m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
@@ -99,19 +124,50 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 	SYS_CLOSE: func(m *Machine) {
 		fd := m.getRegister(utils.RegisterToIndex("x0"))
 		err := syscall.Close(int(fd))
+		n := 0
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_CLOSE)
+			n = -1
+			m.SetErrorCodeRegister(MatchString(err.Error()))
 		}
+		m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+	},
+	SYS_STRERR: func(m *Machine) {
+		er := m.getRegister(utils.RegisterToIndex("er"))
+		addr := m.getRegister(utils.RegisterToIndex("x0"))
+		length := m.getRegister(utils.RegisterToIndex("x1"))
+
+		code := ErrorCode(er)
+		message := []byte(code.String())
+		n := -1
+
+		if addr >= uint64(len(m.memory)) {
+			m.SetErrorCodeRegister(EFAULT)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
+		if length == 0 || addr+length > uint64(len(m.memory)) {
+			m.SetErrorCodeRegister(EFAULT)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
+		copy(m.memory[addr:addr+length], message[:])
+
+		m.setRegister(utils.RegisterToIndex("x0"), uint64(len(message)))
 	},
 	SYS_NET_LISTEN_TCP: func(m *Machine) {
 		listenOptsAddr := m.getRegister(utils.RegisterToIndex("x0"))
 		listenOptsData := m.memory[listenOptsAddr : listenOptsAddr+7]
 
+		n := -1
 		var listenOpts SocketListenTcpOpts
 		buffer := bytes.NewReader(listenOptsData)
 		err := binary.Read(buffer, binary.BigEndian, &listenOpts)
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_LISTEN_TCP)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 
 		address := net.IPv4(listenOpts.Address[0], listenOpts.Address[1], listenOpts.Address[2], listenOpts.Address[3])
@@ -130,11 +186,15 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 			Port: int(listenOpts.Port),
 		})
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_LISTEN_TCP)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 		file, err := ln.File()
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_LISTEN_TCP)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 
 		m.setRegister(utils.RegisterToIndex("x0"), uint64(file.Fd()))
@@ -143,11 +203,14 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		connectOptsAddr := m.getRegister(utils.RegisterToIndex("x0"))
 		connectOptsData := m.memory[connectOptsAddr : connectOptsAddr+7]
 
+		n := -1
 		var connectOpts SocketConnectTcpOpts
 		buffer := bytes.NewReader(connectOptsData)
 		err := binary.Read(buffer, binary.BigEndian, &connectOpts)
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_CONNECT_TCP)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 
 		address := net.IPv4(connectOpts.Address[0], connectOpts.Address[1], connectOpts.Address[2], connectOpts.Address[3])
@@ -166,11 +229,15 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 			Port: int(connectOpts.Port),
 		})
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_CONNECT_TCP)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 		file, err := dial.File()
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_CONNECT_TCP)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 
 		m.setRegister(utils.RegisterToIndex("x0"), uint64(file.Fd()))
@@ -180,7 +247,7 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 
 		conn, _, err := syscall.Accept(int(fd))
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_ACCEPT)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
 		}
 
 		m.setRegister(utils.RegisterToIndex("x0"), uint64(conn))
@@ -189,28 +256,39 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		fd := m.getRegister(utils.RegisterToIndex("x0"))
 		returnAddr := m.getRegister(utils.RegisterToIndex("x1"))
 
+		n := -1
 		file := os.NewFile(uintptr(fd), "")
 		if file == nil {
-			log.Fatal(fmt.Errorf("failed to create file from fd"), "syscall", SYS_NET_GETPEERNAME)
+			m.SetErrorCodeRegister(EFAILEDCREATE)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 		conn, err := net.FileConn(file)
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_GETPEERNAME)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 
 		remoteAddr := conn.RemoteAddr()
 		ipAddr, portStr, err := net.SplitHostPort(remoteAddr.String())
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_GETPEERNAME)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 		port, err := strconv.ParseInt(portStr, 10, 32)
 		if err != nil {
-			log.Fatal(err, "syscall", SYS_NET_GETPEERNAME)
+			m.SetErrorCodeRegister(MatchString(err.Error()))
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 
 		finalAddr := net.ParseIP(ipAddr)
 		if finalAddr == nil {
-			log.Fatal(fmt.Errorf("failed to parse IP address"), "syscall", SYS_NET_GETPEERNAME)
+			m.SetErrorCodeRegister(EBADHOSTADDRESS)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
 		}
 
 		result := make([]byte, 6)
@@ -231,6 +309,10 @@ func (m *Machine) handleSyscall() {
 	if call, ok := Syscalls[sc]; ok {
 		call(m)
 	} else {
-		log.Fatal("unknown syscall", "index", sc)
+		m.SetErrorCodeRegister(UNKNOWN_SYSCAlL)
 	}
+}
+
+func (m *Machine) SetErrorCodeRegister(code ErrorCode) {
+	m.setRegister(utils.RegisterToIndex("er"), uint64(code))
 }

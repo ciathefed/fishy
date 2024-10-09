@@ -12,9 +12,9 @@
 
 .section data
 message1:
-    db "this is the first message\n", $0x00
+    db "this is the first message\n", 0x00
 message2:
-    db "this is the second message\n", $0x00
+    db "this is the second message\n", 0x00
 
 .section text
 _start:

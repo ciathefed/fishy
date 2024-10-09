@@ -6,7 +6,6 @@ import (
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
-	"strconv"
 )
 
 func (c *Compiler) compileCall(instruction *ast.Instruction) error {
@@ -20,7 +19,10 @@ func (c *Compiler) compileCall(instruction *ast.Instruction) error {
 
 	switch a := arg.(type) {
 	case *ast.NumberLiteral:
-		num, _ := strconv.ParseUint(a.Value, 10, 64)
+		num, err := ParseStringUint(a.Value)
+		if err != nil {
+			return err
+		}
 		opcode := utils.Bytes2(uint16(opcode.CALL_LIT))
 		*section = append(*section, opcode...)
 		*section = append(*section, utils.Bytes8(num)...)
