@@ -34,7 +34,7 @@ func (m *Machine) handleMovRegLit() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	dt := datatype.DataType(m.decodeNumber("u8", pos))
+	dt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
@@ -52,7 +52,7 @@ func (m *Machine) handleMovRegAdr() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	dt := datatype.DataType(m.decodeNumber("u8", pos))
+	dt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
@@ -70,7 +70,7 @@ func (m *Machine) handleMovRegAof() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
@@ -122,15 +122,15 @@ func (m *Machine) handleMovRegAof() {
 	}
 
 	switch dt {
-	case datatype.U8:
+	case datatype.BYTE:
 		m.setRegister(reg, uint64(m.memory[addr]))
-	case datatype.U16:
+	case datatype.WORD:
 		num := binary.BigEndian.Uint16(m.memory[addr : addr+2])
 		m.setRegister(reg, uint64(num))
-	case datatype.U32:
+	case datatype.DWORD:
 		num := binary.BigEndian.Uint32(m.memory[addr : addr+4])
 		m.setRegister(reg, uint64(num))
-	case datatype.U64, datatype.UNSET:
+	case datatype.QWORD, datatype.UNSET:
 		num := binary.BigEndian.Uint64(m.memory[addr : addr+8])
 		m.setRegister(reg, num)
 	}
@@ -140,7 +140,7 @@ func (m *Machine) handleMovAofReg() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	value := m.decodeValue(rdt)
@@ -192,15 +192,15 @@ func (m *Machine) handleMovAofReg() {
 	}
 
 	switch dt {
-	case datatype.U8:
+	case datatype.BYTE:
 		m.memory[addr] = byte(m.getRegister(reg))
-	case datatype.U16:
+	case datatype.WORD:
 		bytes := utils.Bytes2(uint16(m.getRegister(reg)))
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
-	case datatype.U32:
+	case datatype.DWORD:
 		bytes := utils.Bytes4(uint32(m.getRegister(reg)))
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
-	case datatype.U64, datatype.UNSET:
+	case datatype.QWORD, datatype.UNSET:
 		bytes := utils.Bytes8(m.getRegister(reg))
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	}
@@ -210,7 +210,7 @@ func (m *Machine) handleMovAofLit() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	value := m.decodeValue(rdt)
@@ -262,15 +262,15 @@ func (m *Machine) handleMovAofLit() {
 	}
 
 	switch dt {
-	case datatype.U8:
+	case datatype.BYTE:
 		m.memory[addr] = byte(lit)
-	case datatype.U16:
+	case datatype.WORD:
 		bytes := utils.Bytes2(uint16(lit))
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
-	case datatype.U32:
+	case datatype.DWORD:
 		bytes := utils.Bytes4(uint32(lit))
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
-	case datatype.U64, datatype.UNSET:
+	case datatype.QWORD, datatype.UNSET:
 		bytes := utils.Bytes8(uint64(lit))
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	}

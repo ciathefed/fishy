@@ -186,7 +186,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		bytecode := []byte{}
 
-		c.updateSymbolDataType(sequence.Name, datatype.U8)
+		c.updateSymbolDataType(sequence.Name, datatype.BYTE)
 
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
@@ -209,7 +209,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		bytecode := []byte{}
 
-		c.updateSymbolDataType(sequence.Name, datatype.U16)
+		c.updateSymbolDataType(sequence.Name, datatype.WORD)
 
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
@@ -230,7 +230,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		bytecode := []byte{}
 
-		c.updateSymbolDataType(sequence.Name, datatype.U32)
+		c.updateSymbolDataType(sequence.Name, datatype.DWORD)
 
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
@@ -251,7 +251,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		bytecode := []byte{}
 
-		c.updateSymbolDataType(sequence.Name, datatype.U64)
+		c.updateSymbolDataType(sequence.Name, datatype.QWORD)
 
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
@@ -271,7 +271,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		amount := 0
 
-		c.updateSymbolDataType(sequence.Name, datatype.U8)
+		c.updateSymbolDataType(sequence.Name, datatype.BYTE)
 
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
@@ -292,7 +292,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		amount := 0
 
-		c.updateSymbolDataType(sequence.Name, datatype.U16)
+		c.updateSymbolDataType(sequence.Name, datatype.WORD)
 
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
@@ -313,7 +313,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		amount := 0
 
-		c.updateSymbolDataType(sequence.Name, datatype.U32)
+		c.updateSymbolDataType(sequence.Name, datatype.DWORD)
 
 		for i, value := range sequence.Values {
 			switch v := value.(type) {
@@ -334,7 +334,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 		section := c.currentSectionBytecode()
 		amount := 0
 
-		c.updateSymbolDataType(sequence.Name, datatype.U64)
+		c.updateSymbolDataType(sequence.Name, datatype.QWORD)
 
 		for i, value := range sequence.Values {
 			switch v := value.(type) {

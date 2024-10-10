@@ -10,7 +10,7 @@ func (m *Machine) handleBitwise(op opcode.Opcode) {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	switch op {

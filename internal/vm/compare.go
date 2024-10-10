@@ -43,7 +43,7 @@ func (m *Machine) handleCompare(op opcode.Opcode) {
 
 func (m *Machine) applyRegLitCompare(operation func(uint64, uint64) Flag) {
 	reg := m.readRegister()
-	lit := m.readLiteral(datatype.U64)
+	lit := m.readLiteral(datatype.QWORD)
 	result := operation(m.getRegister(reg), lit)
 	m.setRegister(utils.RegisterToIndex("cp"), uint64(result))
 }

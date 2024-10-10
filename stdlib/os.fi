@@ -7,13 +7,13 @@
 #define SYS_INT_TO_STR      0x07
 
 #macro exit status
-    mov u8 x15, SYS_EXIT
+    mov byte x15, SYS_EXIT
     mov x0, status
     syscall
 #end
 
 #macro open addr len mode perms
-    mov u8 x15, SYS_OPEN
+    mov byte x15, SYS_OPEN
     mov x3, perms
     mov x2, mode
     mov x1, len
@@ -22,7 +22,7 @@
 #end
 
 #macro read fd buffer len
-    mov u8 x15, SYS_READ
+    mov byte x15, SYS_READ
     mov x2, len
     mov x1, buffer
     mov x0, fd
@@ -30,7 +30,7 @@
 #end
 
 #macro write fd buffer len
-    mov u8 x15, SYS_WRITE
+    mov byte x15, SYS_WRITE
     mov x2, len
     mov x1, buffer
     mov x0, fd
@@ -38,20 +38,20 @@
 #end
 
 #macro close fd
-    mov u8 x15, SYS_CLOSE
+    mov byte x15, SYS_CLOSE
     mov x0, fd
     syscall
 #end
 
 #macro strerr buffer len
-    mov u8 x15, SYS_STRERR
+    mov byte x15, SYS_STRERR
     mov x1, len
     mov x0, buffer
     syscall
 #end
 
 #macro int_to_str number buffer len
-    mov u8 x15, SYS_INT_TO_STR
+    mov byte x15, SYS_INT_TO_STR
     mov x2, len
     mov x1, buffer
     mov x0, number

@@ -41,7 +41,7 @@ func New(bytecode []byte, memorySize int, debug bool) *Machine {
 func (m *Machine) Run() {
 	for {
 		pos := m.position()
-		instruction := m.decodeNumber("u16", pos)
+		instruction := m.decodeNumber("word", pos)
 		op := opcode.Opcode(instruction)
 
 		switch op {
@@ -69,21 +69,16 @@ func (m *Machine) Run() {
 			m.handleMovAofReg()
 		case opcode.MOV_AOF_LIT:
 			m.handleMovAofLit()
-		case opcode.ADD_REG_LIT, opcode.ADD_REG_REG,
-			opcode.SUB_REG_LIT, opcode.SUB_REG_REG,
-			opcode.MUL_REG_LIT, opcode.MUL_REG_REG,
-			opcode.DIV_REG_LIT, opcode.DIV_REG_REG:
+		case opcode.ADD_REG_LIT, opcode.ADD_REG_REG, opcode.ADD_REG_AOF,
+			opcode.SUB_REG_LIT, opcode.SUB_REG_REG, opcode.SUB_REG_AOF,
+			opcode.MUL_REG_LIT, opcode.MUL_REG_REG, opcode.MUL_REG_AOF,
+			opcode.DIV_REG_LIT, opcode.DIV_REG_REG, opcode.DIV_REG_AOF:
 			m.handleArithmetic(op)
-		case opcode.AND_REG_LIT,
-			opcode.AND_REG_REG,
-			opcode.OR_REG_LIT,
-			opcode.OR_REG_REG,
-			opcode.XOR_REG_LIT,
-			opcode.XOR_REG_REG,
-			opcode.SHL_REG_LIT,
-			opcode.SHL_REG_REG,
-			opcode.SHR_REG_LIT,
-			opcode.SHR_REG_REG:
+		case opcode.AND_REG_LIT, opcode.AND_REG_REG,
+			opcode.OR_REG_LIT, opcode.OR_REG_REG,
+			opcode.XOR_REG_LIT, opcode.XOR_REG_REG,
+			opcode.SHL_REG_LIT, opcode.SHL_REG_REG,
+			opcode.SHR_REG_LIT, opcode.SHR_REG_REG:
 			m.handleBitwise(op)
 		case opcode.CMP_REG_LIT, opcode.CMP_REG_REG:
 			m.handleCompare(op)
@@ -118,15 +113,15 @@ func (m *Machine) Run() {
 func (m *Machine) decodeNumber(dataType string, index int) int {
 	dataType = strings.ToLower(dataType)
 	switch dataType {
-	case "u8":
+	case "byte":
 		return int(m.memory[index])
-	case "u16":
+	case "word":
 		bytes := m.memory[index : index+2]
 		return int(binary.BigEndian.Uint16(bytes))
-	case "u32":
+	case "dword":
 		bytes := m.memory[index : index+4]
 		return int(binary.BigEndian.Uint32(bytes))
-	case "u64", "unset":
+	case "qword", "unset":
 		bytes := m.memory[index : index+8]
 		return int(binary.BigEndian.Uint64(bytes))
 	default:
@@ -138,13 +133,13 @@ func (m *Machine) decodeNumber(dataType string, index int) int {
 func (m *Machine) decodeNumberBytes(dataType string, index int) []byte {
 	dataType = strings.ToLower(dataType)
 	switch dataType {
-	case "u8":
+	case "byte":
 		return []byte{m.memory[index]}
-	case "u16":
+	case "word":
 		return m.memory[index : index+2]
-	case "u32":
+	case "dword":
 		return m.memory[index : index+4]
-	case "u64", "unset":
+	case "qword", "unset":
 		return m.memory[index : index+8]
 	default:
 		log.Fatal("unknown data type", "type", dataType)
@@ -179,7 +174,7 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 		m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 		pos = m.position()
-		op := ast.Operator(m.decodeNumber("u8", pos))
+		op := ast.Operator(m.decodeNumber("byte", pos))
 		m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 		pos = m.position()
@@ -197,7 +192,7 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 		m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 		pos = m.position()
-		op := ast.Operator(m.decodeNumber("u8", pos))
+		op := ast.Operator(m.decodeNumber("byte", pos))
 		m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 		pos = m.position()
@@ -215,7 +210,7 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 
 		pos = m.position()
-		op := ast.Operator(m.decodeNumber("u8", pos))
+		op := ast.Operator(m.decodeNumber("byte", pos))
 		m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 		pos = m.position()
@@ -233,7 +228,7 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 
 		pos = m.position()
-		op := ast.Operator(m.decodeNumber("u8", pos))
+		op := ast.Operator(m.decodeNumber("byte", pos))
 		m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 		pos = m.position()
@@ -252,7 +247,7 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 }
 
 func (m *Machine) parserHeaderStart() {
-	start := m.readLiteral(datatype.U64)
+	start := m.readLiteral(datatype.QWORD)
 	m.memory = m.memory[8:]
 	m.setRegister(utils.RegisterToIndex("ip"), uint64(start))
 }
@@ -338,13 +333,13 @@ func (m *Machine) stackPopBytes(dataType datatype.DataType) []byte {
 
 	var value []byte
 	switch dataType {
-	case datatype.U8:
+	case datatype.BYTE:
 		value = []byte{m.memory[memIndex]}
-	case datatype.U16:
+	case datatype.WORD:
 		value = m.memory[memIndex : memIndex+dataType.Size()]
-	case datatype.U32:
+	case datatype.DWORD:
 		value = m.memory[memIndex : memIndex+dataType.Size()]
-	case datatype.U64, datatype.UNSET:
+	case datatype.QWORD, datatype.UNSET:
 		value = m.memory[memIndex : memIndex+dataType.Size()]
 	default:
 		log.Fatal("unknown data type", "type", dataType)
@@ -363,13 +358,13 @@ func (m *Machine) stackPop(dataType datatype.DataType) uint64 {
 
 	var value uint64
 	switch dataType {
-	case datatype.U8:
+	case datatype.BYTE:
 		value = uint64(m.memory[memIndex])
-	case datatype.U16:
+	case datatype.WORD:
 		value = uint64(binary.BigEndian.Uint16(m.memory[memIndex : memIndex+dataType.Size()]))
-	case datatype.U32:
+	case datatype.DWORD:
 		value = uint64(binary.BigEndian.Uint32(m.memory[memIndex : memIndex+dataType.Size()]))
-	case datatype.U64, datatype.UNSET:
+	case datatype.QWORD, datatype.UNSET:
 		value = binary.BigEndian.Uint64(m.memory[memIndex : memIndex+dataType.Size()])
 	default:
 		log.Fatal("unknown data type", "type", dataType)

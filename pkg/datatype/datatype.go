@@ -9,29 +9,23 @@ import (
 type DataType int
 
 const (
-	U8 DataType = iota
-	U16
-	U32
-	U64
-	// I8
-	// I16
-	// I32
-	// I64
-	// F32
-	// F64
+	BYTE DataType = iota
+	WORD
+	DWORD
+	QWORD
 	UNSET = 0xff
 )
 
 func (d DataType) String() string {
 	switch d {
-	case U8:
-		return "U8"
-	case U16:
-		return "U16"
-	case U32:
-		return "U32"
-	case U64:
-		return "U64"
+	case BYTE:
+		return "BYTE"
+	case WORD:
+		return "WORD"
+	case DWORD:
+		return "DWORD"
+	case QWORD:
+		return "QWORD"
 	case UNSET:
 		return "UNSET"
 	default:
@@ -42,13 +36,13 @@ func (d DataType) String() string {
 
 func (d DataType) Size() int {
 	switch d {
-	case U8:
+	case BYTE:
 		return 1
-	case U16:
+	case WORD:
 		return 2
-	case U32:
+	case DWORD:
 		return 4
-	case U64:
+	case QWORD:
 		return 8
 	case UNSET:
 		return 8
@@ -60,13 +54,13 @@ func (d DataType) Size() int {
 
 func (d DataType) MakeBytes(value uint64) []byte {
 	switch d {
-	case U8:
+	case BYTE:
 		return []byte{byte(value)}
-	case U16:
+	case WORD:
 		return utils.Bytes2(uint16(value))
-	case U32:
+	case DWORD:
 		return utils.Bytes4(uint32(value))
-	case U64:
+	case QWORD:
 		return utils.Bytes8(value)
 	case UNSET:
 		return utils.Bytes8(value)
@@ -78,13 +72,13 @@ func (d DataType) MakeBytes(value uint64) []byte {
 
 func (d DataType) ReadBytes(byteArray []byte, index int) uint64 {
 	switch d {
-	case U8:
+	case BYTE:
 		return uint64(byteArray[index])
-	case U16:
+	case WORD:
 		return uint64(binary.BigEndian.Uint16(byteArray[index : index+d.Size()]))
-	case U32:
+	case DWORD:
 		return uint64(binary.BigEndian.Uint32(byteArray[index : index+d.Size()]))
-	case U64:
+	case QWORD:
 		return uint64(binary.BigEndian.Uint32(byteArray[index : index+d.Size()]))
 	case UNSET:
 		return uint64(binary.BigEndian.Uint32(byteArray[index : index+d.Size()]))
@@ -96,14 +90,14 @@ func (d DataType) ReadBytes(byteArray []byte, index int) uint64 {
 
 func FromString(ident string) DataType {
 	switch ident {
-	case "u8":
-		return U8
-	case "u16":
-		return U16
-	case "u32":
-		return U32
-	case "u64":
-		return U64
+	case "byte":
+		return BYTE
+	case "word":
+		return WORD
+	case "dword":
+		return DWORD
+	case "qword":
+		return QWORD
 	default:
 		log.Fatal("unknown data type", "type", ident)
 		return UNSET

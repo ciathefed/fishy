@@ -6,32 +6,32 @@
 
 
 #macro net_tcp_listen opts
-    mov u8 x15, SYS_NET_LISTEN_TCP
+    mov byte x15, SYS_NET_LISTEN_TCP
     mov x0, opts
     syscall
 #end
 
 #macro net_tcp_connect opts
-    mov u8 x15, SYS_NET_CONNECT_TCP
+    mov byte x15, SYS_NET_CONNECT_TCP
     mov x0, opts
     syscall
 #end
 
 #macro net_accept fd
-    mov u8 x15, SYS_NET_ACCEPT
+    mov byte x15, SYS_NET_ACCEPT
     mov x0, fd
     syscall
 #end
 
 #macro net_getpeername fd addr
-    mov u8 x15, SYS_NET_GETPEERNAME
+    mov byte x15, SYS_NET_GETPEERNAME
     mov x1, addr
     mov x0, fd
     syscall
 #end
 
 #macro net_ip_to_str address buffer len
-    mov u8 x15, SYS_NET_IP_TO_STR
+    mov byte x15, SYS_NET_IP_TO_STR
     mov x2, len
     mov x1, buffer
     mov x0, address

@@ -19,7 +19,7 @@ _start:
 array_sum:
 
 .loop_sum:
-    mov u16 x4, [x0]
+    mov word x4, [x0]
     cmp x2, x1
     jeq .done_sum
     add x3, x4

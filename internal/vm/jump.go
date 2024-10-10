@@ -11,14 +11,14 @@ func (m *Machine) handleJump(op opcode.Opcode) {
 
 	switch op {
 	case opcode.JMP_LIT:
-		target := m.readLiteral(datatype.U64)
+		target := m.readLiteral(datatype.QWORD)
 		m.setRegister(utils.RegisterToIndex("ip"), target)
 	case opcode.JMP_REG:
 		targetReg := m.readRegister()
 		target := m.getRegister(targetReg)
 		m.setRegister(utils.RegisterToIndex("ip"), target)
 	case opcode.JEQ_LIT:
-		target := m.readLiteral(datatype.U64)
+		target := m.readLiteral(datatype.QWORD)
 		if m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_EQ) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
@@ -29,7 +29,7 @@ func (m *Machine) handleJump(op opcode.Opcode) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
 	case opcode.JNE_LIT:
-		target := m.readLiteral(datatype.U64)
+		target := m.readLiteral(datatype.QWORD)
 		if m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_LT) || m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_GT) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
@@ -40,7 +40,7 @@ func (m *Machine) handleJump(op opcode.Opcode) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
 	case opcode.JLT_LIT:
-		target := m.readLiteral(datatype.U64)
+		target := m.readLiteral(datatype.QWORD)
 		if m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_LT) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
@@ -51,7 +51,7 @@ func (m *Machine) handleJump(op opcode.Opcode) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
 	case opcode.JGT_LIT:
-		target := m.readLiteral(datatype.U64)
+		target := m.readLiteral(datatype.QWORD)
 		if m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_GT) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
@@ -62,7 +62,7 @@ func (m *Machine) handleJump(op opcode.Opcode) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
 	case opcode.JLE_LIT:
-		target := m.readLiteral(datatype.U64)
+		target := m.readLiteral(datatype.QWORD)
 		if m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_EQ) || m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_LT) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
@@ -73,7 +73,7 @@ func (m *Machine) handleJump(op opcode.Opcode) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}
 	case opcode.JGE_LIT:
-		target := m.readLiteral(datatype.U64)
+		target := m.readLiteral(datatype.QWORD)
 		if m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_EQ) || m.getRegister(utils.RegisterToIndex("cp")) == uint64(FLAG_GT) {
 			m.setRegister(utils.RegisterToIndex("ip"), target)
 		}

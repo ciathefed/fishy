@@ -12,7 +12,7 @@ func (m *Machine) handlePushLit() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
@@ -25,7 +25,7 @@ func (m *Machine) handlePushReg() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
@@ -39,7 +39,7 @@ func (m *Machine) handlePushAof() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	value := m.decodeValue(rdt)
@@ -87,13 +87,13 @@ func (m *Machine) handlePushAof() {
 	}
 
 	switch dt {
-	case datatype.U8:
+	case datatype.BYTE:
 		m.stackPush([]byte{m.memory[addr]})
-	case datatype.U16:
+	case datatype.WORD:
 		m.stackPush(m.memory[addr : addr+2])
-	case datatype.U32:
+	case datatype.DWORD:
 		m.stackPush(m.memory[addr : addr+4])
-	case datatype.U64, datatype.UNSET:
+	case datatype.QWORD, datatype.UNSET:
 		m.stackPush(m.memory[addr : addr+8])
 	}
 }
@@ -102,7 +102,7 @@ func (m *Machine) handlePopReg() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	pos = m.position()
@@ -116,7 +116,7 @@ func (m *Machine) handlePopAof() {
 	m.incRegister(utils.RegisterToIndex("ip"), 2)
 
 	pos := m.position()
-	rdt := datatype.DataType(m.decodeNumber("u8", pos))
+	rdt := datatype.DataType(m.decodeNumber("byte", pos))
 	m.incRegister(utils.RegisterToIndex("ip"), 1)
 
 	value := m.decodeValue(rdt)
@@ -166,13 +166,13 @@ func (m *Machine) handlePopAof() {
 	bytes := m.stackPopBytes(rdt)
 
 	switch dt {
-	case datatype.U8:
+	case datatype.BYTE:
 		m.memory[addr] = bytes[0]
-	case datatype.U16:
+	case datatype.WORD:
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
-	case datatype.U32:
+	case datatype.DWORD:
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
-	case datatype.U64, datatype.UNSET:
+	case datatype.QWORD, datatype.UNSET:
 		copy(m.memory[addr:addr+dt.Size()], bytes[:])
 	}
 }
