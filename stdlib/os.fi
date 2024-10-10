@@ -4,6 +4,7 @@
 #define SYS_WRITE           0x04
 #define SYS_CLOSE           0x05
 #define SYS_STRERR          0x06
+#define SYS_INT_TO_STR      0x07
 
 #macro exit status
     mov u8 x15, SYS_EXIT
@@ -48,3 +49,11 @@
     mov x0, buffer
     syscall
 #end
+
+#macro int_to_str number buffer len
+    mov u8 x15, SYS_INT_TO_STR
+    mov x2, len
+    mov x1, buffer
+    mov x0, number
+    syscall
+#end 

@@ -271,8 +271,6 @@ func (m *Machine) parseHeaderSymbolTable() {
 
 		var key uint64
 		switch size {
-		case 1:
-			key = uint64(keyValues[i])
 		case 2:
 			key = uint64(binary.BigEndian.Uint16(keyValues[i : i+size]))
 		case 4:

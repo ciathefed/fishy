@@ -1,7 +1,8 @@
-#define SYS_NET_LISTEN_TCP  0x07
-#define SYS_NET_CONNECT_TCP 0x08
-#define SYS_NET_ACCEPT      0x09
-#define SYS_NET_GETPEERNAME 0x0A
+#define SYS_NET_LISTEN_TCP  0x08
+#define SYS_NET_CONNECT_TCP 0x09
+#define SYS_NET_ACCEPT      0x0A
+#define SYS_NET_GETPEERNAME 0x0B
+#define SYS_NET_IP_TO_STR   0x0C
 
 
 #macro net_tcp_listen opts
@@ -26,5 +27,13 @@
     mov u8 x15, SYS_NET_GETPEERNAME
     mov x1, addr
     mov x0, fd
+    syscall
+#end
+
+#macro net_ip_to_str address buffer len
+    mov u8 x15, SYS_NET_IP_TO_STR
+    mov x2, len
+    mov x1, buffer
+    mov x0, address
     syscall
 #end

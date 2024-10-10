@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"fishy/pkg/ast"
-	"fishy/pkg/datatype"
 	"fishy/pkg/opcode"
 	"fishy/pkg/utils"
 	"fmt"
@@ -15,7 +14,7 @@ func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
 		return fmt.Errorf("%s expected 2 arguments", instruction.Name)
 	}
 
-	bytecode, kind, err := getArithmeticArgsBytecode(instruction.DataType, instruction.Args[0], instruction.Args[1])
+	bytecode, kind, err := getArithmeticArgsBytecode(instruction, instruction.Args[0], instruction.Args[1])
 	if err != nil {
 		return err
 	}
@@ -31,7 +30,7 @@ func (c *Compiler) compileArithmetic(instruction *ast.Instruction) error {
 	return nil
 }
 
-func getArithmeticArgsBytecode(dataType datatype.DataType, arg0, arg1 interface{}) ([]byte, string, error) {
+func getArithmeticArgsBytecode(instruction *ast.Instruction, arg0, arg1 interface{}) ([]byte, string, error) {
 	bytecode := []byte{}
 	kind := "REG_LIT"
 
@@ -45,16 +44,16 @@ func getArithmeticArgsBytecode(dataType datatype.DataType, arg0, arg1 interface{
 			}
 			kind = "REG_LIT"
 			bytecode = append(bytecode, byte(a0.Value))
-			bytecode = append(bytecode, dataType.MakeBytes(num)...)
+			bytecode = append(bytecode, instruction.DataType.MakeBytes(num)...)
 		case *ast.Register:
 			kind = "REG_REG"
 			bytecode = append(bytecode, byte(a0.Value))
 			bytecode = append(bytecode, byte(a1.Value))
 		default:
-			return nil, "", fmt.Errorf("expected argument #2 to be REGISTER or NUMBER got %T", a1)
+			return nil, "", fmt.Errorf("%s expected argument #2 to be REGISTER or NUMBER got %T", instruction.Name, a1)
 		}
 	default:
-		return nil, "", fmt.Errorf("expected argument #1 to be REGISTER got %T", a0)
+		return nil, "", fmt.Errorf("%s expected argument #1 to be REGISTER got %T", instruction.Name, a0)
 	}
 
 	return bytecode, kind, nil

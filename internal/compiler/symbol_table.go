@@ -32,20 +32,19 @@ func (s *SymbolTable) Get(name string) *Symbol {
 }
 
 func (s *SymbolTable) GetSize() int {
-	longestAddr := 0
+	longestAddr := uint64(0)
 	for _, sym := range s.symbols {
-		if sym.addr > uint64(longestAddr) {
-			longestAddr = int(sym.addr)
+		if sym.addr > longestAddr {
+			longestAddr = sym.addr
 		}
 	}
 
-	if longestAddr <= 0xff {
-		return 1
-	} else if longestAddr <= 0xffff {
+	switch {
+	case longestAddr <= 0xFFFF:
 		return 2
-	} else if longestAddr <= 0xffffffff {
+	case longestAddr <= 0xFFFFFFFF:
 		return 4
-	} else {
+	default:
 		return 8
 	}
 }
@@ -56,9 +55,6 @@ func (s *SymbolTable) Compile(name string, addr uint64) []byte {
 
 	if symbol := s.Get(name); symbol != nil {
 		switch size {
-		case 1:
-			bytecode = append(bytecode, byte(addr))
-			bytecode = append(bytecode, byte(symbol.dataType))
 		case 2:
 			bytecode = append(bytecode, utils.Bytes2(uint16(addr))...)
 			bytecode = append(bytecode, byte(symbol.dataType))

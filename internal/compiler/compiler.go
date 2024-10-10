@@ -258,7 +258,7 @@ func (c *Compiler) compileSequence(sequence *ast.Sequence) error {
 			case *ast.NumberLiteral:
 				num, err := ParseStringUint(v.Value)
 				if err != nil {
-
+					return err
 				}
 				bytecode = append(bytecode, utils.Bytes8(num)...)
 			default:

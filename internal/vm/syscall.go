@@ -33,10 +33,12 @@ const (
 	SYS_WRITE
 	SYS_CLOSE
 	SYS_STRERR
+	SYS_INT_TO_STR
 	SYS_NET_LISTEN_TCP
 	SYS_NET_CONNECT_TCP
 	SYS_NET_ACCEPT
 	SYS_NET_GETPEERNAME
+	SYS_NET_IP_TO_STR
 )
 
 var Syscalls = map[SyscallIndex]SyscallFunction{
@@ -51,13 +53,13 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		perm := m.getRegister(utils.RegisterToIndex("x3"))
 
 		n := -1
-		if addr >= uint64(len(m.memory)) {
+		if addr >= uint64(len(m.memory)) || addr+length > uint64(len(m.memory)) {
 			m.SetErrorCodeRegister(EADDROUTOFBOUNDS)
 			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 			return
 		}
 
-		if length == 0 || addr+length > uint64(len(m.memory)) {
+		if length == 0 {
 			m.SetErrorCodeRegister(EINVALIDLENGTH)
 			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 			return
@@ -100,13 +102,13 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		start := int(addr)
 		end := start + int(length)
 
-		if start >= len(m.memory) {
+		if start >= len(m.memory) || end > len(m.memory) {
 			m.SetErrorCodeRegister(EADDROUTOFBOUNDS)
 			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 			return
 		}
 
-		if start < 0 || end > len(m.memory) || start >= end {
+		if start < 0 || start >= end {
 			m.SetErrorCodeRegister(EINVALIDLENGTH)
 			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 			return
@@ -141,13 +143,13 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		n := -1
 
 		if addr >= uint64(len(m.memory)) {
-			m.SetErrorCodeRegister(EFAULT)
+			m.SetErrorCodeRegister(EADDROUTOFBOUNDS)
 			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 			return
 		}
 
 		if length == 0 || addr+length > uint64(len(m.memory)) {
-			m.SetErrorCodeRegister(EFAULT)
+			m.SetErrorCodeRegister(EINVALIDLENGTH)
 			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 			return
 		}
@@ -155,6 +157,30 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		copy(m.memory[addr:addr+length], message[:])
 
 		m.setRegister(utils.RegisterToIndex("x0"), uint64(len(message)))
+	},
+	SYS_INT_TO_STR: func(m *Machine) {
+		number := m.getRegister(utils.RegisterToIndex("x0"))
+		addr := m.getRegister(utils.RegisterToIndex("x1"))
+		length := m.getRegister(utils.RegisterToIndex("x2"))
+
+		str := strconv.Itoa(int(number))
+		n := -1
+
+		if addr >= uint64(len(m.memory)) {
+			m.SetErrorCodeRegister(EADDROUTOFBOUNDS)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
+		if length == 0 || addr+length > uint64(len(m.memory)) {
+			m.SetErrorCodeRegister(EINVALIDLENGTH)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
+		copy(m.memory[addr:addr+length], str[:])
+
+		m.setRegister(utils.RegisterToIndex("x0"), uint64(len(str)))
 	},
 	SYS_NET_LISTEN_TCP: func(m *Machine) {
 		listenOptsAddr := m.getRegister(utils.RegisterToIndex("x0"))
@@ -257,46 +283,50 @@ var Syscalls = map[SyscallIndex]SyscallFunction{
 		returnAddr := m.getRegister(utils.RegisterToIndex("x1"))
 
 		n := -1
-		file := os.NewFile(uintptr(fd), "")
-		if file == nil {
-			m.SetErrorCodeRegister(EFAILEDCREATE)
-			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
-			return
-		}
-		conn, err := net.FileConn(file)
+		sa, err := syscall.Getpeername(int(fd))
 		if err != nil {
 			m.SetErrorCodeRegister(MatchString(err.Error()))
 			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
 			return
 		}
 
-		remoteAddr := conn.RemoteAddr()
-		ipAddr, portStr, err := net.SplitHostPort(remoteAddr.String())
-		if err != nil {
-			m.SetErrorCodeRegister(MatchString(err.Error()))
-			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
-			return
-		}
-		port, err := strconv.ParseInt(portStr, 10, 32)
-		if err != nil {
-			m.SetErrorCodeRegister(MatchString(err.Error()))
-			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
-			return
-		}
-
-		finalAddr := net.ParseIP(ipAddr)
-		if finalAddr == nil {
-			m.SetErrorCodeRegister(EBADHOSTADDRESS)
-			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
-			return
-		}
+		sockAddr := sa.(*syscall.SockaddrInet4)
 
 		result := make([]byte, 6)
-		copy(result[0:4], finalAddr.To4())
-		result[4] = byte(port >> 8)
-		result[5] = byte(port & 0xff)
+		copy(result[0:4], sockAddr.Addr[:])
+		result[4] = byte(sockAddr.Port >> 8)
+		result[5] = byte(sockAddr.Port & 0xff)
 
 		copy(m.memory[int(returnAddr):], result)
+	},
+	SYS_NET_IP_TO_STR: func(m *Machine) {
+		ipAddr := m.getRegister(utils.RegisterToIndex("x0"))
+		returnAddr := m.getRegister(utils.RegisterToIndex("x1"))
+		length := m.getRegister(utils.RegisterToIndex("x2"))
+
+		n := -1
+		if ipAddr >= uint64(len(m.memory)) ||
+			ipAddr+4 > uint64(len(m.memory)) ||
+			returnAddr >= uint64(len(m.memory)) ||
+			returnAddr+length > uint64(len(m.memory)) {
+			m.SetErrorCodeRegister(EADDROUTOFBOUNDS)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
+		if length == 0 {
+			m.SetErrorCodeRegister(EINVALIDLENGTH)
+			m.setRegister(utils.RegisterToIndex("x0"), uint64(n))
+			return
+		}
+
+		ipBuffer := m.memory[ipAddr : ipAddr+4]
+
+		ip := net.IP(ipBuffer).String()
+
+		copy(m.memory[returnAddr:returnAddr+length], ip[:])
+
+		m.setRegister(utils.RegisterToIndex("x0"), uint64(len(ip)))
 	},
 }
 
