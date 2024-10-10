@@ -8,54 +8,54 @@ import (
 	"strconv"
 )
 
-func (m *Machine) handlePushLit() {
-	m.incRegister(utils.RegisterToIndex("ip"), 2)
+func (m *Machine) handlePushLit(thread *Thread) {
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 2)
 
-	pos := m.position()
+	pos := m.position(thread)
 	rdt := datatype.DataType(m.decodeNumber("byte", pos))
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-	pos = m.position()
+	pos = m.position(thread)
 	lit := m.decodeNumberBytes(rdt.String(), pos)
-	m.incRegister(utils.RegisterToIndex("ip"), uint64(rdt.Size()))
-	m.stackPush(lit)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), uint64(rdt.Size()))
+	m.stackPush(thread, lit)
 }
 
-func (m *Machine) handlePushReg() {
-	m.incRegister(utils.RegisterToIndex("ip"), 2)
+func (m *Machine) handlePushReg(thread *Thread) {
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 2)
 
-	pos := m.position()
+	pos := m.position(thread)
 	rdt := datatype.DataType(m.decodeNumber("byte", pos))
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-	pos = m.position()
+	pos = m.position(thread)
 	reg := m.decodeRegister(pos)
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-	m.stackPush(rdt.MakeBytes(m.getRegister(reg)))
+	m.stackPush(thread, rdt.MakeBytes(m.getRegister(thread, reg)))
 }
 
-func (m *Machine) handlePushAof() {
-	m.incRegister(utils.RegisterToIndex("ip"), 2)
+func (m *Machine) handlePushAof(thread *Thread) {
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 2)
 
-	pos := m.position()
+	pos := m.position(thread)
 	rdt := datatype.DataType(m.decodeNumber("byte", pos))
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-	value := m.decodeValue(rdt)
+	value := m.decodeValue(thread, rdt)
 	addr := 0
 	switch v := value.(type) {
 	case *ast.NumberLiteral:
 		num, _ := strconv.ParseUint(v.Value, 10, 64)
 		addr += int(num)
 	case *ast.Register:
-		num := m.getRegister(v.Value)
+		num := m.getRegister(thread, v.Value)
 		addr += int(num)
 	case *ast.RegisterOffsetNumber:
-		num := m.getRegister(v.Left.Value)
+		num := m.getRegister(thread, v.Left.Value)
 		addr += int(num)
 	case *ast.RegisterOffsetRegister:
-		num := m.getRegister(v.Left.Value)
+		num := m.getRegister(thread, v.Left.Value)
 		addr += int(num)
 	case *ast.LabelOffsetNumber:
 		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
@@ -79,60 +79,60 @@ func (m *Machine) handlePushAof() {
 	case *ast.RegisterOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
 	case *ast.RegisterOffsetRegister:
-		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(thread, v.Right.Value))))
 	case *ast.LabelOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
 	case *ast.LabelOffsetRegister:
-		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(thread, v.Right.Value))))
 	}
 
 	switch dt {
 	case datatype.BYTE:
-		m.stackPush([]byte{m.memory[addr]})
+		m.stackPush(thread, []byte{m.memory[addr]})
 	case datatype.WORD:
-		m.stackPush(m.memory[addr : addr+2])
+		m.stackPush(thread, m.memory[addr:addr+2])
 	case datatype.DWORD:
-		m.stackPush(m.memory[addr : addr+4])
+		m.stackPush(thread, m.memory[addr:addr+4])
 	case datatype.QWORD, datatype.UNSET:
-		m.stackPush(m.memory[addr : addr+8])
+		m.stackPush(thread, m.memory[addr:addr+8])
 	}
 }
 
-func (m *Machine) handlePopReg() {
-	m.incRegister(utils.RegisterToIndex("ip"), 2)
+func (m *Machine) handlePopReg(thread *Thread) {
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 2)
 
-	pos := m.position()
+	pos := m.position(thread)
 	rdt := datatype.DataType(m.decodeNumber("byte", pos))
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-	pos = m.position()
+	pos = m.position(thread)
 	reg := m.decodeRegister(pos)
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-	m.setRegister(reg, m.stackPop(rdt))
+	m.setRegister(thread, reg, m.stackPop(thread, rdt))
 }
 
-func (m *Machine) handlePopAof() {
-	m.incRegister(utils.RegisterToIndex("ip"), 2)
+func (m *Machine) handlePopAof(thread *Thread) {
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 2)
 
-	pos := m.position()
+	pos := m.position(thread)
 	rdt := datatype.DataType(m.decodeNumber("byte", pos))
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-	value := m.decodeValue(rdt)
+	value := m.decodeValue(thread, rdt)
 	addr := 0
 	switch v := value.(type) {
 	case *ast.NumberLiteral:
 		num, _ := strconv.ParseUint(v.Value, 10, 64)
 		addr += int(num)
 	case *ast.Register:
-		num := m.getRegister(v.Value)
+		num := m.getRegister(thread, v.Value)
 		addr += int(num)
 	case *ast.RegisterOffsetNumber:
-		num := m.getRegister(v.Left.Value)
+		num := m.getRegister(thread, v.Left.Value)
 		addr += int(num)
 	case *ast.RegisterOffsetRegister:
-		num := m.getRegister(v.Left.Value)
+		num := m.getRegister(thread, v.Left.Value)
 		addr += int(num)
 	case *ast.LabelOffsetNumber:
 		num, _ := strconv.ParseUint(v.Left.(*ast.NumberLiteral).Value, 10, 64)
@@ -156,14 +156,14 @@ func (m *Machine) handlePopAof() {
 	case *ast.RegisterOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
 	case *ast.RegisterOffsetRegister:
-		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(thread, v.Right.Value))))
 	case *ast.LabelOffsetNumber:
 		addr = applyOffset(addr, v.Operator, v.Right.Value)
 	case *ast.LabelOffsetRegister:
-		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(v.Right.Value))))
+		addr = applyOffset(addr, v.Operator, strconv.Itoa(int(m.getRegister(thread, v.Right.Value))))
 	}
 
-	bytes := m.stackPopBytes(rdt)
+	bytes := m.stackPopBytes(thread, rdt)
 
 	switch dt {
 	case datatype.BYTE:

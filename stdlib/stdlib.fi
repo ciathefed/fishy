@@ -5,6 +5,13 @@
 #define SYS_CLOSE           0x05
 #define SYS_STRERR          0x06
 #define SYS_INT_TO_STR      0x07
+#define SYS_STR_TO_INT      0x08
+#define SYS_CLOCK           0x09
+
+#define STDIN  0x00
+#define STDOUT 0x01
+#define STDERR 0x02
+
 
 #macro exit status
     mov byte x15, SYS_EXIT
@@ -57,3 +64,16 @@
     mov x0, number
     syscall
 #end 
+
+#macro str_to_int number_addr number_len return_addr
+    mov byte x15, SYS_STR_TO_INT
+    mov x2, return_addr
+    mov x1, number_len
+    mov x0, number_addr
+    syscall
+#end
+
+#macro clock 
+    mov byte x15, SYS_CLOCK
+    syscall
+#end

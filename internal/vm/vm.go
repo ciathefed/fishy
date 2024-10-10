@@ -10,78 +10,121 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 )
 
+type Thread struct {
+	registers []uint64
+	isRunning bool
+	done      chan bool
+}
+
 type Machine struct {
-	registers   []uint64
+	threads     map[int]*Thread
+	mainThread  *Thread
 	memory      []byte
 	symbolTable map[uint64]datatype.DataType
+	wg          *sync.WaitGroup
 	debug       bool
 }
 
 func New(bytecode []byte, memorySize int, debug bool) *Machine {
 	m := &Machine{
-		registers:   make([]uint64, 21),
+		threads:     make(map[int]*Thread),
 		memory:      bytecode,
 		symbolTable: make(map[uint64]datatype.DataType),
+		wg:          &sync.WaitGroup{},
 		debug:       debug,
 	}
+
+	thread := m.CreateThread()
+	m.mainThread = m.threads[0]
 
 	m.parserHeaderStart()
 	m.parseHeaderSymbolTable()
 
 	m.memory = append(m.memory, make([]byte, memorySize-len(m.memory))...)
 
-	m.setRegister(utils.RegisterToIndex("sp"), uint64(len(m.memory)))
-	m.setRegister(utils.RegisterToIndex("fp"), uint64(len(m.memory)))
+	m.setRegister(thread, utils.RegisterToIndex("sp"), uint64(len(m.memory)))
+	m.setRegister(thread, utils.RegisterToIndex("fp"), uint64(len(m.memory)))
 
 	return m
 }
 
-func (m *Machine) Run() {
-	for {
-		pos := m.position()
+func (m *Machine) CreateThread() *Thread {
+	thread := &Thread{
+		registers: make([]uint64, 21),
+		isRunning: true,
+		done:      make(chan bool),
+	}
+	m.threads[len(m.threads)] = thread
+	return thread
+}
+
+func (m *Machine) GetThread(index int) (*Thread, bool) {
+	thread, ok := m.threads[index]
+	return thread, ok
+}
+
+func (m *Machine) GetThreadIndex(thread *Thread) (int, bool) {
+	for key, value := range m.threads {
+		if thread == value {
+			return key, true
+		}
+	}
+	return -1, false
+}
+
+func (m *Machine) RunThread(thread *Thread) {
+	defer func() {
+		thread.isRunning = false
+		close(thread.done)
+	}()
+
+	for thread.isRunning {
+		pos := m.position(thread)
 		instruction := m.decodeNumber("word", pos)
 		op := opcode.Opcode(instruction)
 
 		switch op {
 		case opcode.NOP:
-			m.incRegister(utils.RegisterToIndex("ip"), 1)
+			m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 		case opcode.HLT:
+			thread.isRunning = false
 			return
 		case opcode.BRK:
 			if m.debug {
 				panic("todo")
 			} else {
-				m.incRegister(utils.RegisterToIndex("ip"), 1)
+				m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 			}
 		case opcode.SYSCALL:
-			m.handleSyscall()
+			m.handleSyscall(thread)
 		case opcode.MOV_REG_REG:
-			m.handleMovRegReg()
+			m.handleMovRegReg(thread)
 		case opcode.MOV_REG_LIT:
-			m.handleMovRegLit()
+			m.handleMovRegLit(thread)
 		case opcode.MOV_REG_ADR:
-			m.handleMovRegAdr()
+			m.handleMovRegAdr(thread)
 		case opcode.MOV_REG_AOF:
-			m.handleMovRegAof()
+			m.handleMovRegAof(thread)
 		case opcode.MOV_AOF_REG:
-			m.handleMovAofReg()
+			m.handleMovAofReg(thread)
 		case opcode.MOV_AOF_LIT:
-			m.handleMovAofLit()
+			m.handleMovAofLit(thread)
 		case opcode.ADD_REG_LIT, opcode.ADD_REG_REG, opcode.ADD_REG_AOF,
 			opcode.SUB_REG_LIT, opcode.SUB_REG_REG, opcode.SUB_REG_AOF,
 			opcode.MUL_REG_LIT, opcode.MUL_REG_REG, opcode.MUL_REG_AOF,
 			opcode.DIV_REG_LIT, opcode.DIV_REG_REG, opcode.DIV_REG_AOF:
-			m.handleArithmetic(op)
+			m.handleArithmetic(thread, op)
 		case opcode.AND_REG_LIT, opcode.AND_REG_REG,
 			opcode.OR_REG_LIT, opcode.OR_REG_REG,
 			opcode.XOR_REG_LIT, opcode.XOR_REG_REG,
 			opcode.SHL_REG_LIT, opcode.SHL_REG_REG,
 			opcode.SHR_REG_LIT, opcode.SHR_REG_REG:
-			m.handleBitwise(op)
+			m.handleBitwise(thread, op)
 		case opcode.CMP_REG_LIT, opcode.CMP_REG_REG:
-			m.handleCompare(op)
+			m.handleCompare(thread, op)
 		case opcode.JMP_LIT, opcode.JMP_REG,
 			opcode.JEQ_LIT, opcode.JEQ_REG,
 			opcode.JNE_LIT, opcode.JNE_REG,
@@ -89,25 +132,30 @@ func (m *Machine) Run() {
 			opcode.JGT_LIT, opcode.JGT_REG,
 			opcode.JLE_LIT, opcode.JLE_REG,
 			opcode.JGE_LIT, opcode.JGE_REG:
-			m.handleJump(op)
+			m.handleJump(thread, op)
 		case opcode.PUSH_LIT:
-			m.handlePushLit()
+			m.handlePushLit(thread)
 		case opcode.PUSH_REG:
-			m.handlePushReg()
+			m.handlePushReg(thread)
 		case opcode.PUSH_AOF:
-			m.handlePushAof()
+			m.handlePushAof(thread)
 		case opcode.POP_REG:
-			m.handlePopReg()
+			m.handlePopReg(thread)
 		case opcode.POP_AOF:
-			m.handlePopAof()
+			m.handlePopAof(thread)
 		case opcode.CALL_LIT:
-			m.handleCallLit()
+			m.handleCallLit(thread)
 		case opcode.RET:
-			m.handleRet()
+			m.handleRet(thread)
 		default:
 			log.Fatal("unhandled instruction", "op", op.String())
 		}
 	}
+}
+
+func (m *Machine) Run() {
+	m.RunThread(m.mainThread)
+
 }
 
 func (m *Machine) decodeNumber(dataType string, index int) int {
@@ -152,34 +200,34 @@ func (m *Machine) decodeRegister(index int) int {
 	return int(v)
 }
 
-func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
-	pos := m.position()
+func (m *Machine) decodeValue(thread *Thread, dataType datatype.DataType) ast.Value {
+	pos := m.position(thread)
 	indexValue := m.memory[pos]
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
 	switch indexValue {
 	case 2:
-		pos := m.position()
+		pos := m.position(thread)
 		reg := m.decodeRegister(pos)
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 		return &ast.Register{Value: reg}
 	case 0, 1, 3, 4:
-		pos := m.position()
+		pos := m.position(thread)
 		num := m.decodeNumber(dataType.String(), pos)
-		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+		m.incRegister(thread, utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 		return &ast.NumberLiteral{Value: strconv.Itoa(num)}
 	case 5:
-		pos := m.position()
+		pos := m.position(thread)
 		reg := m.decodeRegister(pos)
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-		pos = m.position()
+		pos = m.position(thread)
 		op := ast.Operator(m.decodeNumber("byte", pos))
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-		pos = m.position()
+		pos = m.position(thread)
 		offset := m.decodeNumber(dataType.String(), pos)
-		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+		m.incRegister(thread, utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 
 		return &ast.RegisterOffsetNumber{
 			Left:     ast.Register{Value: reg},
@@ -187,17 +235,17 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 			Right:    ast.NumberLiteral{Value: strconv.Itoa(offset)},
 		}
 	case 6:
-		pos := m.position()
+		pos := m.position(thread)
 		reg0 := m.decodeRegister(pos)
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-		pos = m.position()
+		pos = m.position(thread)
 		op := ast.Operator(m.decodeNumber("byte", pos))
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-		pos = m.position()
+		pos = m.position(thread)
 		reg1 := m.decodeRegister(pos)
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
 		return &ast.RegisterOffsetRegister{
 			Left:     ast.Register{Value: reg0},
@@ -205,17 +253,17 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 			Right:    ast.Register{Value: reg1},
 		}
 	case 7:
-		pos := m.position()
+		pos := m.position(thread)
 		addr := m.decodeNumber(dataType.String(), pos)
-		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+		m.incRegister(thread, utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 
-		pos = m.position()
+		pos = m.position(thread)
 		op := ast.Operator(m.decodeNumber("byte", pos))
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-		pos = m.position()
+		pos = m.position(thread)
 		offset := m.decodeNumber(dataType.String(), pos)
-		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+		m.incRegister(thread, utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 
 		return &ast.LabelOffsetNumber{
 			Left:     &ast.NumberLiteral{Value: strconv.Itoa(addr)},
@@ -223,17 +271,17 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 			Right:    ast.NumberLiteral{Value: strconv.Itoa(offset)},
 		}
 	case 8:
-		pos := m.position()
+		pos := m.position(thread)
 		addr := m.decodeNumber(dataType.String(), pos)
-		m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+		m.incRegister(thread, utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 
-		pos = m.position()
+		pos = m.position(thread)
 		op := ast.Operator(m.decodeNumber("byte", pos))
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
-		pos = m.position()
+		pos = m.position(thread)
 		reg := m.decodeRegister(pos)
-		m.incRegister(utils.RegisterToIndex("ip"), 1)
+		m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 
 		return &ast.LabelOffsetRegister{
 			Left:     &ast.NumberLiteral{Value: strconv.Itoa(addr)},
@@ -247,9 +295,9 @@ func (m *Machine) decodeValue(dataType datatype.DataType) ast.Value {
 }
 
 func (m *Machine) parserHeaderStart() {
-	start := m.readLiteral(datatype.QWORD)
+	start := m.readLiteral(m.mainThread, datatype.QWORD)
 	m.memory = m.memory[8:]
-	m.setRegister(utils.RegisterToIndex("ip"), uint64(start))
+	m.setRegister(m.mainThread, utils.RegisterToIndex("ip"), uint64(start))
 }
 
 func (m *Machine) parseHeaderSymbolTable() {
@@ -281,40 +329,40 @@ func (m *Machine) parseHeaderSymbolTable() {
 	m.memory = m.memory[end:]
 }
 
-func (m *Machine) position() int {
+func (m *Machine) position(thread *Thread) int {
 	index := utils.RegisterToIndex("ip")
-	return int(m.getRegister(index))
+	return int(m.getRegister(thread, index))
 }
 
-func (m *Machine) setRegister(index int, value uint64) {
-	m.registers[index] = value
+func (m *Machine) setRegister(thread *Thread, index int, value uint64) {
+	thread.registers[index] = value
 }
 
-func (m *Machine) getRegister(index int) uint64 {
-	return m.registers[index]
+func (m *Machine) getRegister(thread *Thread, index int) uint64 {
+	return thread.registers[index]
 }
 
-func (m *Machine) incRegister(index int, amount uint64) {
-	m.registers[index] += amount
+func (m *Machine) incRegister(thread *Thread, index int, amount uint64) {
+	thread.registers[index] += amount
 }
 
-func (m *Machine) readRegister() int {
-	pos := m.position()
+func (m *Machine) readRegister(thread *Thread) int {
+	pos := m.position(thread)
 	reg := m.decodeRegister(pos)
-	m.incRegister(utils.RegisterToIndex("ip"), 1)
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 1)
 	return reg
 }
 
-func (m *Machine) readLiteral(dataType datatype.DataType) uint64 {
-	pos := m.position()
+func (m *Machine) readLiteral(thread *Thread, dataType datatype.DataType) uint64 {
+	pos := m.position(thread)
 	lit := m.decodeNumber(dataType.String(), pos)
-	m.incRegister(utils.RegisterToIndex("ip"), uint64(dataType.Size()))
+	m.incRegister(thread, utils.RegisterToIndex("ip"), uint64(dataType.Size()))
 	return uint64(lit)
 }
 
-func (m *Machine) stackPush(v []byte) {
+func (m *Machine) stackPush(thread *Thread, v []byte) {
 	spIndex := utils.RegisterToIndex("sp")
-	spValue := m.getRegister(spIndex)
+	spValue := m.getRegister(thread, spIndex)
 
 	// byteArray := utils.Bytes8(v)
 
@@ -322,12 +370,12 @@ func (m *Machine) stackPush(v []byte) {
 
 	copy(m.memory[memIndex:memIndex+len(v)], v)
 
-	m.setRegister(spIndex, spValue-uint64(len(v)))
+	m.setRegister(thread, spIndex, spValue-uint64(len(v)))
 }
 
-func (m *Machine) stackPopBytes(dataType datatype.DataType) []byte {
+func (m *Machine) stackPopBytes(thread *Thread, dataType datatype.DataType) []byte {
 	spIndex := utils.RegisterToIndex("sp")
-	spValue := m.getRegister(spIndex)
+	spValue := m.getRegister(thread, spIndex)
 
 	memIndex := int(spValue)
 
@@ -345,14 +393,14 @@ func (m *Machine) stackPopBytes(dataType datatype.DataType) []byte {
 		log.Fatal("unknown data type", "type", dataType)
 	}
 
-	m.setRegister(spIndex, spValue+uint64(dataType.Size()))
+	m.setRegister(thread, spIndex, spValue+uint64(dataType.Size()))
 
 	return value
 }
 
-func (m *Machine) stackPop(dataType datatype.DataType) uint64 {
+func (m *Machine) stackPop(thread *Thread, dataType datatype.DataType) uint64 {
 	spIndex := utils.RegisterToIndex("sp")
-	spValue := m.getRegister(spIndex)
+	spValue := m.getRegister(thread, spIndex)
 
 	memIndex := int(spValue)
 
@@ -370,13 +418,13 @@ func (m *Machine) stackPop(dataType datatype.DataType) uint64 {
 		log.Fatal("unknown data type", "type", dataType)
 	}
 
-	m.setRegister(spIndex, spValue+uint64(dataType.Size()))
+	m.setRegister(thread, spIndex, spValue+uint64(dataType.Size()))
 
 	return value
 }
 
-func (m *Machine) DumpRegisters() {
-	for i, register := range m.registers {
+func (m *Machine) DumpRegisters(index int) {
+	for i, register := range m.threads[index].registers {
 		name := utils.IndexToRegister(i)
 		fmt.Printf("%-3s: 0x%016X\n", name, register)
 	}

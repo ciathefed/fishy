@@ -14,12 +14,12 @@ const (
 	FLAG_GT
 )
 
-func (m *Machine) handleCompare(op opcode.Opcode) {
-	m.incRegister(utils.RegisterToIndex("ip"), 2)
+func (m *Machine) handleCompare(thread *Thread, op opcode.Opcode) {
+	m.incRegister(thread, utils.RegisterToIndex("ip"), 2)
 
 	switch op {
 	case opcode.CMP_REG_LIT:
-		m.applyRegLitCompare(func(reg, lit uint64) Flag {
+		m.applyRegLitCompare(thread, func(reg, lit uint64) Flag {
 			if reg == lit {
 				return FLAG_EQ
 			}
@@ -29,7 +29,7 @@ func (m *Machine) handleCompare(op opcode.Opcode) {
 			return FLAG_GT
 		})
 	case opcode.CMP_REG_REG:
-		m.applyRegRegCompare(func(reg0, reg1 uint64) Flag {
+		m.applyRegRegCompare(thread, func(reg0, reg1 uint64) Flag {
 			if reg0 == reg1 {
 				return FLAG_EQ
 			}
@@ -41,16 +41,16 @@ func (m *Machine) handleCompare(op opcode.Opcode) {
 	}
 }
 
-func (m *Machine) applyRegLitCompare(operation func(uint64, uint64) Flag) {
-	reg := m.readRegister()
-	lit := m.readLiteral(datatype.QWORD)
-	result := operation(m.getRegister(reg), lit)
-	m.setRegister(utils.RegisterToIndex("cp"), uint64(result))
+func (m *Machine) applyRegLitCompare(thread *Thread, operation func(uint64, uint64) Flag) {
+	reg := m.readRegister(thread)
+	lit := m.readLiteral(thread, datatype.QWORD)
+	result := operation(m.getRegister(thread, reg), lit)
+	m.setRegister(thread, utils.RegisterToIndex("cp"), uint64(result))
 }
 
-func (m *Machine) applyRegRegCompare(operation func(uint64, uint64) Flag) {
-	reg0 := m.readRegister()
-	reg1 := m.readRegister()
-	result := operation(m.getRegister(reg0), m.getRegister(reg1))
-	m.setRegister(utils.RegisterToIndex("cp"), uint64(result))
+func (m *Machine) applyRegRegCompare(thread *Thread, operation func(uint64, uint64) Flag) {
+	reg0 := m.readRegister(thread)
+	reg1 := m.readRegister(thread)
+	result := operation(m.getRegister(thread, reg0), m.getRegister(thread, reg1))
+	m.setRegister(thread, utils.RegisterToIndex("cp"), uint64(result))
 }

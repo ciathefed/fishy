@@ -1,0 +1,68 @@
+;
+; In this example learn how to spawn threads with arguments
+;
+
+#include "../stdlib/stdlib.fi"
+#include "../stdlib/thread.fi"
+
+.section data
+message:    db "Hello from thread ", 0
+newline:    db 0x0a
+
+.section bss
+buffer:     resb 128
+
+.section text
+_start:
+    mov byte [sp - 32], 1
+    mov byte x15, SYS_THREAD_SPAWN
+    mov x1, 32
+    mov x0, print_loop
+    syscall
+    mov x5, x0
+    mov byte x15, SYS_THREAD_START
+    syscall
+
+    mov byte [sp - 33], 2
+    mov byte x15, SYS_THREAD_SPAWN
+    mov x1, 33
+    mov x0, print_loop
+    syscall
+    mov x6, x0
+    mov byte x15, SYS_THREAD_START
+    syscall
+
+    mov byte [sp - 34], 3
+    mov byte x15, SYS_THREAD_SPAWN
+    mov x1, 34
+    mov x0, print_loop
+    syscall
+    mov x7, x0
+    mov byte x15, SYS_THREAD_START
+    syscall
+
+    mov byte x15, SYS_THREAD_JOIN
+    mov x0, x5
+    syscall
+
+    mov byte x15, SYS_THREAD_JOIN
+    mov x0, x6
+    syscall
+
+    mov byte x15, SYS_THREAD_JOIN
+    mov x0, x7
+    syscall
+
+    hlt
+
+print_loop:
+    pop byte x6
+    mov x7, x6
+    mul x7, 8
+    add x7, buffer
+    int_to_str x6, x7, 8
+    mov x8, 0
+    write STDOUT, message, 18
+    write STDOUT, x7, 1
+    write STDOUT, newline, 1
+    hlt

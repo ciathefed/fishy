@@ -1,0 +1,30 @@
+#define SYS_THREAD_SPAWN    0x0F
+#define SYS_THREAD_START    0x10
+#define SYS_THREAD_STOP     0x11
+#define SYS_THREAD_JOIN     0x12
+
+
+#macro thread_spawn addr offset
+    mov byte x15, SYS_THREAD_SPAWN
+    mov x1, offset
+    mov x0, addr
+    syscall
+#end
+
+#macro thread_start id
+    mov byte x15, SYS_THREAD_START
+    mov x0, id
+    syscall
+#end
+
+#macro thread_stop id
+    mov byte x15, SYS_THREAD_STOP
+    mov x0, id
+    syscall
+#end
+
+#macro thread_join id
+    mov byte x15, SYS_THREAD_JOIN
+    mov x0, id
+    syscall
+#end

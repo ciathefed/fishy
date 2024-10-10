@@ -3,8 +3,7 @@
 ; write it to STDOUT
 ;
 
-#include "../stdlib/os.fi"
-#include "../stdlib/io.fi"
+#include "../stdlib/stdlib.fi"
 
 .section data
 source:

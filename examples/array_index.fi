@@ -1,0 +1,39 @@
+;
+; Example of getting the index of an item in array
+;
+
+section data
+array:      db 1, 5, 10, 20, 50, 80, 100
+array_len:  db 7
+
+.section text
+_start:
+    mov x0, array
+    mov x1, [array_len]
+    mov x2, 10
+    call array_index
+    hlt
+
+array_index:
+    mov x3, 0
+    mov x4, x1
+    sub x4, 1
+    
+.loop:
+    cmp x3, x4
+    jge .not_found
+
+    mov x5, [x0 + x3]
+    cmp x5, x2
+    jeq .found
+
+    add x3, 1
+    jmp .loop
+
+.found:
+    mov x0, x3
+    ret
+
+.not_found:
+    mov x0, -1
+    ret

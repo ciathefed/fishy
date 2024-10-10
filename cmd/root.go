@@ -11,7 +11,7 @@ var (
 	skipPreprocessing bool
 	vomitLexer        bool
 	vomitParser       bool
-	vomitRegisters    bool
+	vomitRegisters    int
 	vomitMemory       bool
 	verbose           bool
 	memorySize        int

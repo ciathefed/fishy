@@ -3,6 +3,7 @@ package cmd
 import (
 	"fishy/internal/vm"
 	"fishy/pkg/log"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -22,9 +23,37 @@ var runCmd = &cobra.Command{
 		m := vm.New(inputData, memorySize, false)
 		m.Run()
 
-		if vomitRegisters {
+		if vomitRegisters > -1 {
+			msg := "main thread"
+			if vomitRegisters > 0 {
+				msg = fmt.Sprintf("thread %d", vomitRegisters)
+			}
+
+			if _, ok := m.GetThread(vomitRegisters); !ok {
+				log.Errorf("%s does not exist", msg)
+			} else {
+				log.Infof("vomiting %s registers 🤮", msg)
+				m.DumpRegisters(vomitRegisters)
+			}
+		} else if vomitRegisters > -2 {
 			log.Info("vomiting registers 🤮")
-			m.DumpRegisters()
+			i := 0
+			for {
+				_, ok := m.GetThread(i)
+				if !ok {
+					break
+				}
+
+				if i == 0 {
+					log.Info("main thread:")
+				} else {
+					log.Infof("thread %d", i)
+				}
+
+				m.DumpRegisters(i)
+
+				i++
+			}
 		}
 
 		if vomitMemory {
@@ -39,6 +68,6 @@ func init() {
 
 	runCmd.Flags().IntVarP(&memorySize, "memory-size", "s", 1024, "total amount of memory to use")
 	runCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output")
-	runCmd.Flags().BoolVarP(&vomitRegisters, "vomit-registers", "", false, "dump the registers when done")
+	runCmd.Flags().IntVarP(&vomitRegisters, "vomit-registers", "", -2, "dump the registers at the index when done (-1 = all)")
 	runCmd.Flags().BoolVarP(&vomitMemory, "vomit-memory", "", false, "dump the memory when done")
 }

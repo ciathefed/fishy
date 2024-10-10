@@ -1,0 +1,29 @@
+;
+; This example show you how to create a sleep function
+;
+
+#include "../stdlib/stdlib.fi"
+
+section data
+array:      db 1, 5, 10, 20, 50, 80, 100
+array_len:  db 7
+
+.section text
+_start:
+    mov x0, 1000
+    call sleep
+    hlt
+
+sleep:
+    mov byte x15, SYS_CLOCK
+    mov x1, x0
+    syscall
+    add x1, x0
+.sleep_loop:
+    mov byte x15, SYS_CLOCK
+    syscall
+    cmp x0, x1
+    jge .sleep_end
+    jmp .sleep_loop
+.sleep_end:
+    ret
