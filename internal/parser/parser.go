@@ -56,7 +56,7 @@ func (p *Parser) parseStatement() (ast.Statement, error) {
 		p.nextToken()
 		return p.parseStatement()
 	default:
-		return nil, fmt.Errorf("unexpected token: %v %v", p.currentToken.Value, p.peekToken.Value)
+		return nil, fmt.Errorf("unexpected token: %v", p.currentToken.Value)
 	}
 }
 

@@ -31,22 +31,6 @@ func skipAlpha(s string, i *int) {
 	}
 }
 
-func skipAlphanum(s string, i *int) {
-	// Check if the pointer is nil to avoid dereferencing a nil pointer
-	if i == nil {
-		return
-	}
-
-	// Ensure the index is within the bounds of the string length
-	for *i < len(s) {
-		ch := rune(s[*i])
-		if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) {
-			break
-		}
-		(*i)++
-	}
-}
-
 func isAlpha(ch byte) bool {
 	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
 }

@@ -11,7 +11,7 @@ import (
 
 var runCmd = &cobra.Command{
 	Use:   "run [file]",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Short: "Run Fishy Bytecode file in the FishyVM",
 	Run: func(cmd *cobra.Command, args []string) {
 		inputFile := args[0]
@@ -23,20 +23,20 @@ var runCmd = &cobra.Command{
 		m := vm.New(inputData, memorySize, false)
 		m.Run()
 
-		if vomitRegisters > -1 {
+		if debugRegisters > -1 {
 			msg := "main thread"
-			if vomitRegisters > 0 {
-				msg = fmt.Sprintf("thread %d", vomitRegisters)
+			if debugRegisters > 0 {
+				msg = fmt.Sprintf("thread %d", debugRegisters)
 			}
 
-			if _, ok := m.GetThread(vomitRegisters); !ok {
+			if _, ok := m.GetThread(debugRegisters); !ok {
 				log.Errorf("%s does not exist", msg)
 			} else {
-				log.Infof("vomiting %s registers 🤮", msg)
-				m.DumpRegisters(vomitRegisters)
+				log.Infof("debugging %s registers", msg)
+				m.DumpRegisters(debugRegisters)
 			}
-		} else if vomitRegisters > -2 {
-			log.Info("vomiting registers 🤮")
+		} else if debugRegisters > -2 {
+			log.Info("debugging registers")
 			i := 0
 			for {
 				_, ok := m.GetThread(i)
@@ -56,8 +56,8 @@ var runCmd = &cobra.Command{
 			}
 		}
 
-		if vomitMemory {
-			log.Info("vomiting memory 🤮")
+		if debugMemory {
+			log.Info("debugging memory")
 			m.DumpMemory(0, memorySize)
 		}
 	},
@@ -66,8 +66,8 @@ var runCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	runCmd.Flags().IntVarP(&memorySize, "memory-size", "s", 1024, "total amount of memory to use")
+	runCmd.Flags().IntVarP(&memorySize, "memory-size", "s", 1024*1024, "total amount of memory to use")
 	runCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output")
-	runCmd.Flags().IntVarP(&vomitRegisters, "vomit-registers", "", -2, "dump the registers at the index when done (-1 = all)")
-	runCmd.Flags().BoolVarP(&vomitMemory, "vomit-memory", "", false, "dump the memory when done")
+	runCmd.Flags().IntVarP(&debugRegisters, "debug-registers", "", -2, "dump the registers at the index when done (-1 = all)")
+	runCmd.Flags().BoolVarP(&debugMemory, "debug-memory", "", false, "dump the memory when done")
 }

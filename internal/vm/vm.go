@@ -43,6 +43,10 @@ func New(bytecode []byte, memorySize int, debug bool) *Machine {
 	m.parserHeaderStart()
 	m.parseHeaderSymbolTable()
 
+	// fmt.Println(memorySize)
+	// fmt.Println(len(m.memory))
+	// fmt.Println(memorySize - len(m.memory))
+
 	m.memory = append(m.memory, make([]byte, memorySize-len(m.memory))...)
 
 	m.setRegister(thread, utils.RegisterToIndex("sp"), uint64(len(m.memory)))

@@ -3,7 +3,7 @@
 ; a simple tcp echo server
 ;
 
-#include "../../stdlib/os.fi"
+#include "../../stdlib/stdlib.fi"
 #include "../../stdlib/net.fi"
 
 .section data

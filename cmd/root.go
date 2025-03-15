@@ -9,10 +9,10 @@ import (
 var (
 	outputFile        string
 	skipPreprocessing bool
-	vomitLexer        bool
-	vomitParser       bool
-	vomitRegisters    int
-	vomitMemory       bool
+	debugLexer        bool
+	debugParser       bool
+	debugRegisters    int
+	debugMemory       bool
 	verbose           bool
 	memorySize        int
 )

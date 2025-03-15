@@ -142,6 +142,12 @@ func (p *PreProcessor) Process() error {
 						return fmt.Errorf("circular include: %s", filePath)
 					}
 
+					p.includedFiles[filePath] = &LocationInformation{
+						file: filePath,
+						line: line.n,
+						col:  i,
+					}
+
 					err = includeData.Process()
 					if err != nil {
 						return err

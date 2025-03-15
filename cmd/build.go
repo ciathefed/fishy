@@ -18,7 +18,7 @@ import (
 
 var buildCmd = &cobra.Command{
 	Use:   "build [file]",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Short: "Compile a FishyASM file to Fishy Bytecode",
 	Run: func(cmd *cobra.Command, args []string) {
 		inputFile := args[0]
@@ -46,11 +46,9 @@ var buildCmd = &cobra.Command{
 			}
 		}
 
-		// fmt.Println(source)
-
 		l := lexer.New(source)
-		if vomitLexer {
-			log.Info("vomiting lexer output 🤮")
+		if debugLexer {
+			log.Info("debugging lexer")
 			for {
 				t := l.NextToken()
 				fmt.Printf("Token(kind=%#v, value=%#v, pos=(%d, %d))\n", t.Kind, t.Value, t.Start, t.End)
@@ -66,8 +64,8 @@ var buildCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		if vomitParser {
-			log.Info("vomiting parser output 🤮")
+		if debugParser {
+			log.Info("debugging parser")
 			printAST(statements)
 			os.Exit(0)
 		}
@@ -101,8 +99,8 @@ func init() {
 	buildCmd.Flags().StringVarP(&outputFile, "output", "o", "out.fbc", "output file")
 	buildCmd.Flags().BoolVarP(&skipPreprocessing, "skip-pre-processing", "", false, "skip pre-processing stage")
 	buildCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output")
-	buildCmd.Flags().BoolVarP(&vomitLexer, "vomit-lexer", "", false, "only dump the lexer output")
-	buildCmd.Flags().BoolVarP(&vomitParser, "vomit-parser", "", false, "only dump the parser output")
+	buildCmd.Flags().BoolVarP(&debugLexer, "debug-lexer", "", false, "only dump the lexer output")
+	buildCmd.Flags().BoolVarP(&debugParser, "debug-parser", "", false, "only dump the parser output")
 }
 
 func printAST(stmts []ast.Statement) {
